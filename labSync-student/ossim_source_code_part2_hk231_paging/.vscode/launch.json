@@ -1,0 +1,25 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Debug C",
+        "type": "cppdbg",
+        "request": "launch",
+        "args": ["sched_0"],
+        "stopAtEntry": false,
+        "externalConsole": false,
+        "cwd": "${workspaceFolder}",
+        "program": "${workspaceFolder}/os",
+        "MIMode": "gdb",
+        "miDebuggerPath": "gdb",
+        "setupCommands": [
+          {
+            "description": "Enable pretty-printing for gdb",
+            "text": "-enable-pretty-printing",
+            "ignoreFailures": true
+          }
+        ],
+        "preLaunchTask": "build"
+      },
+    ]
+  }
