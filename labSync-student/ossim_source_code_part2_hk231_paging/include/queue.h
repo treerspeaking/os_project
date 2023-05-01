@@ -6,9 +6,20 @@
 
 #define MAX_QUEUE_SIZE 10
 
+//
+// wrapper of the pcb queue
+//
+struct qitem_t {
+	struct pcb_t *data;
+	struct qitem_t *next;
+};
+
 struct queue_t {
-	struct pcb_t * proc[MAX_QUEUE_SIZE];
+	//struct pcb_t * proc[MAX_QUEUE_SIZE];
+	struct qitem_t *head;
+	struct qitem_t *tail;
 	int size;
+    // int done_time_slot;
 };
 
 void enqueue(struct queue_t * q, struct pcb_t * proc);

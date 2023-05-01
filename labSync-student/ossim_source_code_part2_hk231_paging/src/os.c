@@ -95,6 +95,9 @@ static void * cpu_routine(void * args) {
 		next_slot(timer_id);
 	}
 	detach_event(timer_id);
+	//
+	// there should be a destroy timer here
+	//
 	pthread_exit(NULL);
 }
 
@@ -150,27 +153,27 @@ static void read_config(const char * path) {
 		malloc(sizeof(unsigned long) * num_processes);
 #ifdef MM_PAGING
 	int sit;
-#ifdef MM_FIXED_MEMSZ
-	/* We provide here a back compatible with legacy OS simulatiom config file
-         * In which, it have no addition config line for Mema, keep only one line
-	 * for legacy info 
-         *  [time slice] [N = Number of CPU] [M = Number of Processes to be run]
-         */
-        memramsz    =  0x100000;
-        memswpsz[0] = 0x1000000;
-	for(sit = 1; sit < PAGING_MAX_MMSWP; sit++)
-		memswpsz[sit] = 0;
-#else
-	/* Read input config of memory size: MEMRAM and upto 4 MEMSWP (mem swap)
-	 * Format: (size=0 result non-used memswap, must have RAM and at least 1 SWAP)
-	 *        MEM_RAM_SZ MEM_SWP0_SZ MEM_SWP1_SZ MEM_SWP2_SZ MEM_SWP3_SZ
-	*/
-	fscanf(file, "%d\n", &memramsz);
-	for(sit = 0; sit < PAGING_MAX_MMSWP; sit++)
-		fscanf(file, "%d", &(memswpsz[sit])); 
+// #ifdef MM_FIXED_MEMSZ
+// 	/* We provide here a back compatible with legacy OS simulatiom config file
+//          * In which, it have no addition config line for Mema, keep only one line
+// 	 * for legacy info 
+//          *  [time slice] [N = Number of CPU] [M = Number of Processes to be run]
+//          */
+//         memramsz    =  0x100000;
+//         memswpsz[0] = 0x1000000;
+// 	for(sit = 1; sit < PAGING_MAX_MMSWP; sit++)
+// 		memswpsz[sit] = 0;
+// #else
+// 	/* Read input config of memory size: MEMRAM and upto 4 MEMSWP (mem swap)
+// 	 * Format: (size=0 result non-used memswap, must have RAM and at least 1 SWAP)
+// 	 *        MEM_RAM_SZ MEM_SWP0_SZ MEM_SWP1_SZ MEM_SWP2_SZ MEM_SWP3_SZ
+// 	*/
+// 	fscanf(file, "%d\n", &memramsz);
+// 	for(sit = 0; sit < PAGING_MAX_MMSWP; sit++)
+// 		fscanf(file, "%d", &(memswpsz[sit])); 
 
-       fscanf(file, "\n"); /* Final character */
-#endif
+//        fscanf(file, "\n"); /* Final character */
+// #endif
 #endif
 
 #ifdef MLQ_SCHED
@@ -181,14 +184,19 @@ static void read_config(const char * path) {
 	for (i = 0; i < num_processes; i++) {
 		ld_processes.path[i] = (char*)malloc(sizeof(char) * 100);
 		ld_processes.path[i][0] = '\0';
+		//fscanf(file, "%ld %s",&ld_processes.prio[i],ld_processes.path[i]);
 		strcat(ld_processes.path[i], "input/proc/");
 		char proc[100];
 #ifdef MLQ_SCHED
 		fscanf(file, "%lu %s %lu\n", &ld_processes.start_time[i], proc, &ld_processes.prio[i]);
+		printf("startime : %lu\n",ld_processes.start_time[i]);
+		printf("proc : %s\n",proc);
+		printf("prio : %lu\n",ld_processes.prio[i]);
 #else
 		fscanf(file, "%lu %s\n", &ld_processes.start_time[i], proc);
 #endif
 		strcat(ld_processes.path[i], proc);
+		printf("%s\n",ld_processes.path[i]);
 	}
 }
 

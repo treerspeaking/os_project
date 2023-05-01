@@ -47,16 +47,40 @@ struct pcb_t * get_mlq_proc(void) {
 	/*TODO: get a process from PRIORITY [ready_queue].
 	 * Remember to use lock to protect the queue.
 	 * */
+    //
+    //  for now could be improve
+    // 
+    pthread_mutex_lock(&queue_lock);
+    int i;
+    for(i = 0;i < MAX_PRIO;i++){
+        if(!empty(&mlq_ready_queue[i])) break;
+    }
+    if(i == MAX_PRIO){
+        // no queue
+        pthread_mutex_unlock(&queue_lock);
+        return NULL; 
+    }
+    // mlq_ready_queue[i]->size --; // could do mlq_mutex_lock
+    // pthread_mutex_unlock(&queue_lock);
+    // pthread_mutex_lock(mlq_ready_queue[i]->q_lock);
+    proc = dequeue(&mlq_ready_queue[i]);
+    pthread_mutex_unlock(&queue_lock);
 	return proc;	
 }
 
 void put_mlq_proc(struct pcb_t * proc) {
+    //
+    // có thể implement thêm mutex chỉ lock khi enqueue vào prio của queue nhất định
+    //
 	pthread_mutex_lock(&queue_lock);
 	enqueue(&mlq_ready_queue[proc->prio], proc);
 	pthread_mutex_unlock(&queue_lock);
 }
 
 void add_mlq_proc(struct pcb_t * proc) {
+    //
+    // có thể implement thêm mutex chỉ lock khi enqueue vào prio của queue nhất định
+    //
 	pthread_mutex_lock(&queue_lock);
 	enqueue(&mlq_ready_queue[proc->prio], proc);
 	pthread_mutex_unlock(&queue_lock);	
