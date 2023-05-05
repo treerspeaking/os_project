@@ -10,7 +10,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-static int time_slot;
+int time_slot;
 static int num_cpus;
 static int done = 0;
 
@@ -26,6 +26,7 @@ struct mmpaging_ld_args {
 	struct timer_id_t  *timer_id;
 };
 #endif
+
 
 static struct ld_args{
 	char ** path;
@@ -67,8 +68,8 @@ static void * cpu_routine(void * args) {
 			time_left = 0;
 		}else if (time_left == 0) {
 			/* The process has done its job in current time slot */
-			printf("\tCPU %d: Put process %2d to run queue\n",
-				id, proc->pid);
+			printf("\tCPU %d: Put process %2d to run queue, at time %ld\n",
+				id, proc->pid,current_time());
 			put_proc(proc);
 			proc = get_proc();
 		}
@@ -84,9 +85,9 @@ static void * cpu_routine(void * args) {
 			next_slot(timer_id);
 			continue;
 		}else if (time_left == 0) {
-			printf("\tCPU %d: Dispatched process %2d\n",
-				id, proc->pid);
-			time_left = time_slot;
+			printf("\tCPU %d: Dispatched process %2d, at time %ld\n",
+				id, proc->pid,current_time());
+			time_left = proc->time_slot_allow;
 		}
 		
 		/* Run current process */
@@ -127,8 +128,8 @@ static void * ld_routine(void * args) {
 		proc->mswp = mswp;
 		proc->active_mswp = active_mswp;
 #endif
-		printf("\tLoaded a process at %s, PID: %d PRIO: %ld\n",
-			ld_processes.path[i], proc->pid, ld_processes.prio[i]);
+		printf("\tLoaded a process at %s, PID: %d PRIO: %ld at time = %ld\n",
+			ld_processes.path[i], proc->pid, ld_processes.prio[i],current_time());
 		add_proc(proc);
 		free(ld_processes.path[i]);
 		i++;
@@ -153,27 +154,27 @@ static void read_config(const char * path) {
 		malloc(sizeof(unsigned long) * num_processes);
 #ifdef MM_PAGING
 	int sit;
-// #ifdef MM_FIXED_MEMSZ
-// 	/* We provide here a back compatible with legacy OS simulatiom config file
-//          * In which, it have no addition config line for Mema, keep only one line
-// 	 * for legacy info 
-//          *  [time slice] [N = Number of CPU] [M = Number of Processes to be run]
-//          */
-//         memramsz    =  0x100000;
-//         memswpsz[0] = 0x1000000;
-// 	for(sit = 1; sit < PAGING_MAX_MMSWP; sit++)
-// 		memswpsz[sit] = 0;
-// #else
-// 	/* Read input config of memory size: MEMRAM and upto 4 MEMSWP (mem swap)
-// 	 * Format: (size=0 result non-used memswap, must have RAM and at least 1 SWAP)
-// 	 *        MEM_RAM_SZ MEM_SWP0_SZ MEM_SWP1_SZ MEM_SWP2_SZ MEM_SWP3_SZ
-// 	*/
-// 	fscanf(file, "%d\n", &memramsz);
-// 	for(sit = 0; sit < PAGING_MAX_MMSWP; sit++)
-// 		fscanf(file, "%d", &(memswpsz[sit])); 
+#ifdef MM_FIXED_MEMSZ
+	/* We provide here a back compatible with legacy OS simulatiom config file
+         * In which, it have no addition config line for Mema, keep only one line
+	 * for legacy info 
+         *  [time slice] [N = Number of CPU] [M = Number of Processes to be run]
+         */
+        memramsz    =  0x100000;
+        memswpsz[0] = 0x1000000;
+	for(sit = 1; sit < PAGING_MAX_MMSWP; sit++)
+		memswpsz[sit] = 0;
+#else
+	/* Read input config of memory size: MEMRAM and upto 4 MEMSWP (mem swap)
+	 * Format: (size=0 result non-used memswap, must have RAM and at least 1 SWAP)
+	 *        MEM_RAM_SZ MEM_SWP0_SZ MEM_SWP1_SZ MEM_SWP2_SZ MEM_SWP3_SZ
+	*/
+	fscanf(file, "%d\n", &memramsz);
+	for(sit = 0; sit < PAGING_MAX_MMSWP; sit++)
+		fscanf(file, "%d", &(memswpsz[sit])); 
 
-//        fscanf(file, "\n"); /* Final character */
-// #endif
+       fscanf(file, "\n"); /* Final character */
+#endif
 #endif
 
 #ifdef MLQ_SCHED

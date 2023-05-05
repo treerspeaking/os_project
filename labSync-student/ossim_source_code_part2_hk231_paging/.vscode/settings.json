@@ -1,5 +1,14 @@
 {
     "files.associations": {
-        "os-cfg.h": "c"
+        "os-cfg.h": "c",
+        "stdint.h": "c",
+        "string.h": "c",
+        "stdio.h": "c",
+        "timer.h": "c",
+        "stdlib.h": "c",
+        "types.h": "c",
+        "pthreadtypes.h": "c",
+        "pthread.h": "c",
+        "type_traits": "c"
     }
 }

@@ -18,6 +18,7 @@ struct queue_t {
 	//struct pcb_t * proc[MAX_QUEUE_SIZE];
 	struct qitem_t *head;
 	struct qitem_t *tail;
+    int slot_left; // remaining time_slot
 	int size;
     // int done_time_slot;
 };

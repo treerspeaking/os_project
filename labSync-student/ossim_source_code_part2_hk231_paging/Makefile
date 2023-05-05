@@ -1,9 +1,10 @@
 
 INC = -Iinclude
-LIB = -lpthread
+LIB = -pthread
 
 SRC = src
 OBJ = obj
+EXT = ext
 INCLUDE = include
 
 CC = gcc
@@ -38,11 +39,18 @@ os: $(OS_OBJ)
 	$(MAKE) $(LFLAGS) $(OS_OBJ) -o os $(LIB)
 
 $(OBJ)/%.o: %.c ${HEADER} $(OBJ)
-	$(MAKE) $(CFLAGS) $< -o $@
+	$(MAKE) $(CFLAGS) $< -o $@ $(LIB)
 
 # Prepare objectives container
 $(OBJ):
 	mkdir -p $(OBJ)
+
+test-sched: $(EXT)/munit.c $(EXT)/munit.h
+	@$(MAKE) $(LFLAGS) -o test/sched \
+	test/sched.c src/common.c src/sched.c src/queue.c \
+	-Iinclude -I$(EXT) $(EXT)/munit.c
+
+	@./test/sched
 
 clean:
 	rm -f $(OBJ)/*.o os sched mem
