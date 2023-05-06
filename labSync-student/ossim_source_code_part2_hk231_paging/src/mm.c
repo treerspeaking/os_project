@@ -51,7 +51,8 @@ int init_pte(uint32_t *pte,
  */
 int pte_set_swap(uint32_t *pte, int swptyp, int swpoff)
 {
-  SETBIT(*pte, PAGING_PTE_PRESENT_MASK);
+  // SETBIT(*pte, PAGING_PTE_PRESENT_MASK);
+  CLRBIT(*pte, PAGING_PTE_PRESENT_MASK);
   SETBIT(*pte, PAGING_PTE_SWAPPED_MASK);
 
   SETVAL(*pte, swptyp, PAGING_PTE_SWPTYP_MASK, PAGING_PTE_SWPTYP_LOBIT);
@@ -85,25 +86,45 @@ int vmap_page_range(struct pcb_t *caller, // process call
            struct framephy_struct *frames,// list of the mapped frames
               struct vm_rg_struct *ret_rg)// return mapped region, the real mapped fp
 {                                         // no guarantee all given pages are mapped
-  //uint32_t * pte = malloc(sizeof(uint32_t));
-  struct framephy_struct *fpit = malloc(sizeof(struct framephy_struct));
-  //int  fpn;
+  uint32_t * pte = malloc(sizeof(uint32_t));
+  // int fpn;
   int pgit = 0;
-  int pgn = PAGING_PGN(addr);
+  
+  struct framephy_struct *fpit = malloc(sizeof(struct framephy_struct));
+  struct framephy_Struct *tmp = fpit;
 
-  ret_rg->rg_end = ret_rg->rg_start = addr; // at least the very first space is usable
+  
+  ret_rg->rg_start = ret_rg->rg_end = addr; // at least the very first space is usable
 
   fpit->fp_next = frames;
+  fpit = frames;
 
   /* TODO map range of frame to address space 
    *      [addr to addr + pgnum*PAGING_PAGESZ
    *      in page table caller->mm->pgd[]
    */
+  int pgn = PAGING_PGN(addr); // the first expanded page at addr
+  // int pgn = GETVAL() 
+
+  int pn = 0;
+  while (pn < pgnum && fpit)
+  {
+    /* Map the next frame in the list */
+    pte_set_fpn(&caller->mm->pgd[pn + pgn], fpit->fpn);
+
+    pgit++;
+    ret_rg->rg_end += PAGE_SIZE;
+    enlist_pgn_node(&caller->mm->fifo_pgn, pn + pgn);
+    
+    fpit = fpit->fp_next;
+  }
+
 
    /* Tracking for later page replacement activities (if needed)
     * Enqueue new usage page */
-   enlist_pgn_node(&caller->mm->fifo_pgn, pgn+pgit);
+  //  enlist_pgn_node(&caller->mm->fifo_pgn, pgn + pgit);
 
+  free (tmp);
 
   return 0;
 }
@@ -118,16 +139,53 @@ int vmap_page_range(struct pcb_t *caller, // process call
 int alloc_pages_range(struct pcb_t *caller, int req_pgnum, struct framephy_struct** frm_lst)
 {
   int pgit, fpn;
-  //struct framephy_struct *newfp_str;
+  struct framephy_struct *newfp_str;
 
   for(pgit = 0; pgit < req_pgnum; pgit++)
   {
     if(MEMPHY_get_freefp(caller->mram, &fpn) == 0)
-   {
-     
-   } else {  // ERROR CODE of obtaining somes but not enough frames
-   } 
- }
+    {
+      newfp_str = malloc(sizeof(struct framephy_struct));
+
+      newfp_str->fpn = fpn;
+      newfp_str->fp_next = *frm_lst;
+      *frm_lst = newfp_str;
+
+      // enlist_framephy_node(frm_lst, fpn);
+
+      // Enqueue the new frame's page number to fifo for replacement tracking
+      enlist_pgn_node(&caller->mm->fifo_pgn, fpn);
+
+    } else 
+    {  // ERROR CODE of obtaining somes but not enough frames
+      int vicpgn, vicfpn;
+      uint32_t vicpte;
+      
+      if (find_victim_page(caller->mm, &vicpgn) != 0)
+      {
+        // ...
+      } else
+      {
+        vicpte = caller->mm->pgd[vicpgn];
+        // ------------------------------------------------------------
+        vicfpn = GETVAL(vicpte, PAGING_PTE_FPN_MASK, 0);
+        // vicfpn = PAGING_FPN(vicpte); --> wrong built macro
+        // ------------------------------------------------------------
+
+        int dest_fpn;
+        MEMPHY_get_freefp(caller->mm, &dest_fpn);
+        
+        // Swap victim frame to swap
+        __swap_cp_page(caller->mram, vicpgn, caller->active_mswp, dest_fpn);
+        
+        /* Update page table */
+        pte_set_swap(&caller->mm->pgd[vicpgn], 0, dest_fpn);
+      }
+
+      // Enqueue the new frame's page number to fifo for replacement tracking
+      enlist_pgn_node(&caller->mm->fifo_pgn, fpn); 
+    } 
+  }
 
   return 0;
 }
@@ -252,6 +310,17 @@ int enlist_pgn_node(struct pgn_t **plist, int pgn)
   pnode->pgn = pgn;
   pnode->pg_next = *plist;
   *plist = pnode;
+
+  return 0;
+}
+
+int enlist_framephy_node(struct framephy_struct **framephylist, int fpn)
+{
+  struct framephy_struct* fpnode = malloc(sizeof(struct framephy_struct));
+
+  fpnode->fpn = fpn;
+  fpnode->fp_next = *framephylist;
+  *framephylist = fpnode;
 
   return 0;
 }
