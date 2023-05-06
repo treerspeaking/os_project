@@ -224,7 +224,7 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
       /* Get free frame in MEMSWP */
       while (find_victim_page(caller->mm, &vicpgn) != 0) {}
 
-      vicpte = &caller->mm->pgd[vicpgn];  // victim pte from victim page number
+      vicpte = caller->mm->pgd[vicpgn];  // victim pte from victim page number
 
       // ---------------------------------------------------------------------------------------------------------
       vicfpn = GETVAL(caller->mm->pgd[vicpgn], PAGING_PTE_FPN_MASK, 0);
@@ -233,7 +233,7 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
 
       /* Do swap frame from MEMRAM to MEMSWP and vice versa*/
       /* Copy victim frame to swap */
-      __swap_cp_page(caller->mram, vicpgn, caller->active_mswp, swpfpn);
+      __swap_cp_page(caller->mram, vicfpn, caller->active_mswp, swpfpn);
       /* Copy target frame from swap to mem */
       __swap_cp_page(caller->active_mswp, tgtfpn, caller->mram, vicfpn);
       
@@ -454,7 +454,7 @@ int validate_overlap_vm_area(struct pcb_t *caller, int vmaid, int vmastart, int 
   while (vma)
   {
     // Check if the new memory range overlaps with the current vm_area_struct
-    if (vma[vmaid].vm_start <= vmastart && vma[vmaid].vm_end < vmaend && vma[vmaid].vm_end <= vma[vmaid].vm_end)
+    if (vma[vmaid].vm_start <= vmastart && vma[vmaid].vm_end < vmaend && vma[vmaid].vm_start <= vma[vmaid].vm_end)
       return -1; // Return error if overlap is found
 
     vma = vma->vm_next;

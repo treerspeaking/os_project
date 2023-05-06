@@ -174,10 +174,10 @@ int alloc_pages_range(struct pcb_t *caller, int req_pgnum, struct framephy_struc
         // ------------------------------------------------------------
 
         int dest_fpn;
-        MEMPHY_get_freefp(caller->mm, &dest_fpn);
+        MEMPHY_get_freefp(caller->active_mswp, &dest_fpn);
         
         // Swap victim frame to swap
-        __swap_cp_page(caller->mram, vicpgn, caller->active_mswp, dest_fpn);
+        __swap_cp_page(caller->mram, vicfpn, caller->active_mswp, dest_fpn);
         
         /* Update page table */
         pte_set_swap(&caller->mm->pgd[vicpgn], 0, dest_fpn);
