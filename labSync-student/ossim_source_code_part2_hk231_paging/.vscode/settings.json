@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "os-cfg.h": "c"
+        "os-cfg.h": "c",
+        "mm.h": "c"
     }
 }

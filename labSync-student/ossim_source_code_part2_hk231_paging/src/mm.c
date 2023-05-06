@@ -169,7 +169,8 @@ int alloc_pages_range(struct pcb_t *caller, int req_pgnum, struct framephy_struc
         vicpte = caller->mm->pgd[vicpgn];
         // ------------------------------------------------------------
         vicfpn = GETVAL(vicpte, PAGING_PTE_FPN_MASK, 0);
-        // vicfpn = PAGING_FPN(vicpte); --> wrong built macro
+        // vicfpn = PAGING_FPN(vicpte);
+        // --> wrong built macro
         // ------------------------------------------------------------
 
         int dest_fpn;

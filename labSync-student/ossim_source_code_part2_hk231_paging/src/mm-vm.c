@@ -30,6 +30,24 @@ int enlist_vm_freerg_list(struct mm_struct *mm, struct vm_rg_struct rg_elmt)
   return 0;
 }
 
+int enlist_vm_freerg_list_new(struct vm_area_struct *area, struct vm_rg_struct rg_elmt)
+{
+  if (rg_elmt.rg_start >= rg_elmt.rg_end)
+    return -1;
+
+
+  struct vm_rg_struct *rg_node = area->vm_freerg_list;
+
+  if (rg_node != NULL)
+    rg_elmt.rg_next = rg_node;
+
+    /* Enlist the new region */
+  area->vm_freerg_list = &rg_elmt;
+
+  return 0;
+
+}
+
 /*get_vma_by_num - get vm area by numID
  *@mm: memory region
  *@vmaid: ID vm area to alloc memory region
@@ -118,21 +136,27 @@ int __alloc(struct pcb_t *caller, int vmaid, int rgid, int size, int *alloc_addr
 /*__free - remove a region memory
  *@caller: caller
  *@vmaid: ID vm area to alloc memory region
- *@rgid: memory region ID (used to identify variable in symbole table)
+ *@rgid: memory region ID (used to identify variable in symbol table)
  *@size: allocated size 
  *
  */
 int __free(struct pcb_t *caller, int vmaid, int rgid)
 {
   struct vm_rg_struct rgnode;
+  
 
   if(rgid < 0 || rgid > PAGING_MAX_SYMTBL_SZ)
     return -1;
 
-  /* TODO: Manage the collect freed region to freerg_list */
+  
+  /* TODO: Manage the collect free region to freerg_list */
+  rgnode = caller->mm->symrgtbl[rgid];
+
+  enlist_vm_freerg_list_new(&caller->mm->mmap[vmaid], rgnode);
+
 
   /*enlist the obsoleted memory region */
-  enlist_vm_freerg_list(caller->mm, rgnode);
+  // enlist_vm_freerg_list(caller->mm, rgnode);
 
   return 0;
 }
@@ -430,7 +454,7 @@ int validate_overlap_vm_area(struct pcb_t *caller, int vmaid, int vmastart, int 
   while (vma)
   {
     // Check if the new memory range overlaps with the current vm_area_struct
-    if (vma->vm_start <= vmastart && vma->vm_end < vmaend && vma->vm_end <= vma->vm_end)
+    if (vma[vmaid].vm_start <= vmastart && vma[vmaid].vm_end < vmaend && vma[vmaid].vm_end <= vma[vmaid].vm_end)
       return -1; // Return error if overlap is found
 
     vma = vma->vm_next;
