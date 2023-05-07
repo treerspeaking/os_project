@@ -43,10 +43,12 @@ struct pcb_t * dequeue(struct queue_t * q) {
 	proc = q->head->data;
 	struct qitem_t * del_item = q->head;
 	q->head = q->head->next;
-	if(empty(q)){
+	if(empty(q))
+	{
 		q->head = NULL;
 		q->tail = NULL;
 	}
+	
     q->size-=1;
 	// delete the del_item
 	free(del_item);

@@ -65,7 +65,7 @@ struct vm_area_struct *get_vma_by_num(struct mm_struct *mm, int vmaid)
   while (vmait < vmaid)
   {
     if(pvma == NULL)
-	  return NULL;
+	    return NULL;
 
     pvma = pvma->vm_next;
   }
@@ -152,11 +152,12 @@ int __free(struct pcb_t *caller, int vmaid, int rgid)
   /* TODO: Manage the collect free region to freerg_list */
   rgnode = caller->mm->symrgtbl[rgid];
 
-  enlist_vm_freerg_list_new(&caller->mm->mmap[vmaid], rgnode);
-
+  struct vm_area_struct *vma = get_vma_by_num(caller->mm, vmaid);
+  if (!vmaid)
+    return -1;
 
   /*enlist the obsoleted memory region */
-  // enlist_vm_freerg_list(caller->mm, rgnode);
+  enlist_vm_freerg_list(caller->mm, rgnode);
 
   return 0;
 }
@@ -207,12 +208,15 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
 
     /* TODO: Play with your paging theory here */
 
-    if (MEMPHY_get_freefp(caller->active_mswp, &swpfpn) == 0)
+    // ---------------------------------------------------------------
+    if (MEMPHY_get_freefp(caller->mram, &swpfpn) == 0)
     {
       __swap_cp_page(caller->active_mswp, tgtfpn, caller->mram, swpfpn);
 
       struct framephy_struct *newFreeframe = malloc(sizeof(struct framephy_struct));
       newFreeframe->fpn = tgtfpn;
+
+      // caller->active_mswp->used_fp_list   Get the used frame out
 
       newFreeframe->fp_next = caller->active_mswp->free_fp_list;
       caller->active_mswp->free_fp_list = newFreeframe;
@@ -223,6 +227,10 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
     {
       /* Get free frame in MEMSWP */
       while (find_victim_page(caller->mm, &vicpgn) != 0) {}
+
+      if (MEMPHY_get_freefp(caller->active_mswp, &swpfpn) != 0)
+      {
+      }
 
       vicpte = caller->mm->pgd[vicpgn];  // victim pte from victim page number
 
@@ -237,6 +245,7 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
       /* Copy target frame from swap to mem */
       __swap_cp_page(caller->active_mswp, tgtfpn, caller->mram, vicfpn);
       
+      // used frame list + free frame list
       
       /* Update page table */
       pte_set_swap(&caller->mm->pgd[vicpgn], 0, swpfpn);
@@ -245,6 +254,12 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
       /* Update its online status of the target page */
       // pte_set_fpn() & mm->pgd[pgn];
       pte_set_fpn(&caller->mm->pgd[pgn], vicfpn);
+      
+      enlist_framephy_node(&caller->active_mswp->free_fp_list, tgtfpn);
+      delist_framephy_node(&caller->active_mswp->used_fp_list, tgtfpn);
+
+      // delist_framephy_node(&caller->active_mswp->free_fp_list, swpfpn);
+      enlist_framephy_node(&caller->active_mswp->used_fp_list, swpfpn);
 
       enlist_pgn_node(&caller->mm->fifo_pgn, pgn);
     }
@@ -445,17 +460,16 @@ struct vm_rg_struct* get_vm_area_node_at_brk(struct pcb_t *caller, int vmaid, in
  */
 int validate_overlap_vm_area(struct pcb_t *caller, int vmaid, int vmastart, int vmaend)
 {
-  struct vm_area_struct *vma = caller->mm->mmap;
+  struct vm_area_struct *vma = get_vma_by_num(caller->mm, vmaid);
 
   /* TODO validate the planned memory area is not overlapped */
 
-
-  // check if the new memory range overlaps with any existing vm_area_struct
+  // Check if the new memory range overlaps with any existing vm_area_struct
   while (vma)
   {
     // Check if the new memory range overlaps with the current vm_area_struct
-    if (vma[vmaid].vm_start <= vmastart && vma[vmaid].vm_end < vmaend && vma[vmaid].vm_start <= vma[vmaid].vm_end)
-      return -1; // Return error if overlap is found
+    if (!(vma->vm_start <= vmastart && vma->vm_end < vmaend && vma->vm_start <= vma->vm_end))
+      return -1;
 
     vma = vma->vm_next;
   }
@@ -510,7 +524,7 @@ int find_victim_page(struct mm_struct *mm, int *retpgn)
   while (pg)
     pg = pg->pg_next;
 
-  retpgn = pg->pgn;
+  retpgn = &(pg->pgn);
 
   free(pg);
 
@@ -581,5 +595,6 @@ int get_free_vmrg_area(struct pcb_t *caller, int vmaid, int size, struct vm_rg_s
 
  return 0;
 }
+
 
 //#endif

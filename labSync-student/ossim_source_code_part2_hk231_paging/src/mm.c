@@ -91,7 +91,7 @@ int vmap_page_range(struct pcb_t *caller, // process call
   int pgit = 0;
   
   struct framephy_struct *fpit = malloc(sizeof(struct framephy_struct));
-  struct framephy_Struct *tmp = fpit;
+  // struct framephy_Struct *tmp = fpit;
 
   
   ret_rg->rg_start = ret_rg->rg_end = addr; // at least the very first space is usable
@@ -100,7 +100,7 @@ int vmap_page_range(struct pcb_t *caller, // process call
   fpit = frames;
 
   /* TODO map range of frame to address space 
-   *      [addr to addr + pgnum*PAGING_PAGESZ
+   *      [addr, addr + pgnum*PAGING_PAGESZ]
    *      in page table caller->mm->pgd[]
    */
   int pgn = PAGING_PGN(addr); // the first expanded page at addr
@@ -116,15 +116,15 @@ int vmap_page_range(struct pcb_t *caller, // process call
     ret_rg->rg_end += PAGE_SIZE;
     enlist_pgn_node(&caller->mm->fifo_pgn, pn + pgn);
     
+    pn++;
     fpit = fpit->fp_next;
   }
-
 
    /* Tracking for later page replacement activities (if needed)
     * Enqueue new usage page */
   //  enlist_pgn_node(&caller->mm->fifo_pgn, pgn + pgit);
 
-  free (tmp);
+  // free (tmp);
 
   return 0;
 }
@@ -139,19 +139,21 @@ int vmap_page_range(struct pcb_t *caller, // process call
 int alloc_pages_range(struct pcb_t *caller, int req_pgnum, struct framephy_struct** frm_lst)
 {
   int pgit, fpn;
-  struct framephy_struct *newfp_str;
+  // struct framephy_struct *newfp_str;
 
   for(pgit = 0; pgit < req_pgnum; pgit++)
   {
     if(MEMPHY_get_freefp(caller->mram, &fpn) == 0)
     {
+      /* // enlist_framephy_node ...
       newfp_str = malloc(sizeof(struct framephy_struct));
 
       newfp_str->fpn = fpn;
       newfp_str->fp_next = *frm_lst;
       *frm_lst = newfp_str;
-
-      // enlist_framephy_node(frm_lst, fpn);
+      */
+      
+      enlist_framephy_node(frm_lst, fpn);
 
       // Enqueue the new frame's page number to fifo for replacement tracking
       enlist_pgn_node(&caller->mm->fifo_pgn, fpn);
@@ -174,17 +176,29 @@ int alloc_pages_range(struct pcb_t *caller, int req_pgnum, struct framephy_struc
         // ------------------------------------------------------------
 
         int dest_fpn;
-        MEMPHY_get_freefp(caller->active_mswp, &dest_fpn);
+        if (MEMPHY_get_freefp(caller->active_mswp, &dest_fpn) == -1)
+        {}
         
         // Swap victim frame to swap
         __swap_cp_page(caller->mram, vicfpn, caller->active_mswp, dest_fpn);
         
         /* Update page table */
         pte_set_swap(&caller->mm->pgd[vicpgn], 0, dest_fpn);
+
+
+        enlist_framephy_node(&caller->mram->free_fp_list, vicfpn);
+        delist_framephy_node(&caller->mram->used_fp_list, vicfpn);
+        
+        enlist_framephy_node(&caller->active_mswp->used_fp_list, dest_fpn);
+        delist_framephy_node(&caller->active_mswp->free_fp_list, dest_fpn);
+        /* Do we need to -----------------------------------------------------------------------------------------------------
+            - Delist vicfpn     from    caller->mram->free_fp_list
+            - Delist dest_fpn   from    caller->active_mswp->free_fp_list
+        */
       }
 
       // Enqueue the new frame's page number to fifo for replacement tracking
-      enlist_pgn_node(&caller->mm->fifo_pgn, fpn); 
+      enlist_pgn_node(&caller->mm->fifo_pgn, fpn);
     } 
   }
 
@@ -325,6 +339,70 @@ int enlist_framephy_node(struct framephy_struct **framephylist, int fpn)
 
   return 0;
 }
+
+int delist_framephy_node(struct framephy_struct **framephylist, int fpn)
+{
+  struct framephy_struct* fpnode = *framephylist;
+  int idx = 0;
+
+  // while(fpnode)
+  // {
+  //   if (fpnode->fpn == fpn)
+  //   {
+  //     delist_framephy_node_idx(framephylist, idx);
+  //     return 0;
+  //   }
+  //
+  //   idx++;
+  //   fpnode = fpnode->fp_next;
+  // }
+
+  if (fpnode && fpnode->fpn == fpn)
+  {
+    *framephylist = fpnode->fp_next;
+    free(fpnode);
+
+    return 0;
+  }
+  else while(fpnode)
+  {
+    if (fpnode->fp_next && fpnode->fp_next->fpn == fpn)
+    {
+      struct framephy_struct* tmp = fpnode->fp_next;
+      fpnode->fp_next = tmp->fp_next;
+      free(tmp);
+
+      return 0;
+    }
+
+    fpnode = fpnode->fp_next;
+  }
+
+  return -1;
+}
+
+int delist_framephy_node_idx(struct framephy_struct **framephylist, int idx)
+{
+  
+  struct framephy_struct* fpnode = *framephylist;
+  if (idx == 0 && fpnode->fp_next == NULL)
+  {
+    *framephylist = fpnode->fp_next;
+    free(fpnode);
+  } else
+  {
+    for (int i = 0; i < idx - 1; i++)
+      fpnode = fpnode->fp_next;
+
+    struct framephy_struct* tmp = fpnode->fp_next;
+    fpnode->fp_next = tmp->fp_next;
+    
+    free(tmp);
+  }
+  
+  return 0;
+}
+
 
 int print_list_fp(struct framephy_struct *ifp)
 {
