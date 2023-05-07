@@ -223,14 +223,18 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
 
       pte_set_fpn(&caller->mm->pgd[pgn], tgtfpn);
 
+
+      enlist_framephy_node(&caller->active_mswp->free_fp_list, tgtfpn);
+      delist_framephy_node(&caller->active_mswp->used_fp_list, tgtfpn);
+
+      enlist_framephy_node(&caller->mram->used_fp_list, swpfpn);
+
     } else
     {
       /* Get free frame in MEMSWP */
       while (find_victim_page(caller->mm, &vicpgn) != 0) {}
-
-      if (MEMPHY_get_freefp(caller->active_mswp, &swpfpn) != 0)
-      {
-      }
+      if (MEMPHY_get_freefp(caller->active_mswp, &swpfpn) != 0) {}
+      
 
       vicpte = caller->mm->pgd[vicpgn];  // victim pte from victim page number
 

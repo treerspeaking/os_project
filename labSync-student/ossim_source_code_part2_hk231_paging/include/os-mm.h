@@ -18,7 +18,8 @@ struct pgn_t
 /*
  *  Memory region struct
  */
-struct vm_rg_struct {
+struct vm_rg_struct
+{
    unsigned long rg_start;
    unsigned long rg_end;
 
@@ -28,7 +29,8 @@ struct vm_rg_struct {
 /*
  *  Memory area struct
  */
-struct vm_area_struct {
+struct vm_area_struct
+{
    unsigned long vm_id;
    unsigned long vm_start;
    unsigned long vm_end;
@@ -46,7 +48,8 @@ struct vm_area_struct {
 /* 
  * Memory management struct
  */
-struct mm_struct {
+struct mm_struct
+{
    uint32_t *pgd;
 
    struct vm_area_struct *mmap;
@@ -61,7 +64,8 @@ struct mm_struct {
 /*
  * FRAME/MEM PHY struct
  */
-struct framephy_struct { 
+struct framephy_struct
+{ 
    int fpn;
    struct framephy_struct *fp_next;
 
@@ -69,7 +73,8 @@ struct framephy_struct {
    struct mm_struct* owner;
 };
 
-struct memphy_struct {
+struct memphy_struct
+{
    /* Basic field of data and size */
    BYTE *storage;
    int maxsz;

@@ -24,7 +24,8 @@
 #define NUM_PAGES	(1 << (ADDRESS_SIZE - OFFSET_LEN))
 #define PAGE_SIZE	(1 << OFFSET_LEN)
 
-enum ins_opcode_t {
+enum ins_opcode_t
+{
 	CALC,	// Just perform calculation, only use CPU
 	ALLOC,	// Allocate memory
 	FREE,	// Deallocated a memory block
@@ -33,19 +34,22 @@ enum ins_opcode_t {
 };
 
 /* instructions executed by the CPU */
-struct inst_t {
+struct inst_t
+{
 	enum ins_opcode_t opcode;
 	uint32_t arg_0; // Argument lists for instructions
 	uint32_t arg_1;
 	uint32_t arg_2;
 };
 
-struct code_seg_t {
+struct code_seg_t
+{
 	struct inst_t * text;
 	uint32_t size;
 };
 
-struct trans_table_t {
+struct trans_table_t
+{
 	/* A row in the page table of the second layer */
 	struct  {
 		addr_t v_index; // The index of virtual address
@@ -55,7 +59,8 @@ struct trans_table_t {
 };
 
 /* Mapping virtual addresses and physical ones */
-struct page_table_t {
+struct page_table_t
+{
 	/* Translation table for the first layer */
 	struct {
 		addr_t v_index;	// Virtual index
@@ -65,7 +70,8 @@ struct page_table_t {
 };
 
 /* PCB, describe information about a process */
-struct pcb_t {
+struct pcb_t
+{
 	uint32_t pid;	// PID
 	uint32_t priority; // Default priority, this legacy (FIXED) value depend on process itself
 	struct code_seg_t * code;	// Code segment

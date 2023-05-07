@@ -9,12 +9,14 @@
 //
 // wrapper of the pcb queue
 //
-struct qitem_t {
+struct qitem_t
+{
 	struct pcb_t *data;
 	struct qitem_t *next;
 };
 
-struct queue_t {
+struct queue_t
+{
 	//struct pcb_t * proc[MAX_QUEUE_SIZE];
 	struct qitem_t *head;
 	struct qitem_t *tail;

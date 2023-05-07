@@ -89,11 +89,10 @@ int vmap_page_range(struct pcb_t *caller, // process call
   uint32_t * pte = malloc(sizeof(uint32_t));
   // int fpn;
   int pgit = 0;
-  
   struct framephy_struct *fpit = malloc(sizeof(struct framephy_struct));
   // struct framephy_Struct *tmp = fpit;
 
-  
+
   ret_rg->rg_start = ret_rg->rg_end = addr; // at least the very first space is usable
 
   fpit->fp_next = frames;
@@ -107,13 +106,14 @@ int vmap_page_range(struct pcb_t *caller, // process call
   // int pgn = GETVAL() 
 
   int pn = 0;
-  while (pn < pgnum && fpit)
+  while (fpit && pn < pgnum)
   {
     /* Map the next frame in the list */
     pte_set_fpn(&caller->mm->pgd[pn + pgn], fpit->fpn);
 
     pgit++;
     ret_rg->rg_end += PAGE_SIZE;
+
     enlist_pgn_node(&caller->mm->fifo_pgn, pn + pgn);
     
     pn++;
