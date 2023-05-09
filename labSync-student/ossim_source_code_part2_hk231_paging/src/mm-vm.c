@@ -33,7 +33,7 @@ int enlist_vm_freerg_list(struct mm_struct *mm, struct vm_rg_struct rg_elmt)
 }
 */
 
-int enlist_vm_freerg_list1(struct mm_struct *mm, struct vm_rg_struct *rg_elmt)
+int enlist_vm_freerg_lists(struct mm_struct *mm, struct vm_rg_struct *rg_elmt)
 {
   struct vm_rg_struct *rg_node = mm->mmap->vm_freerg_list;
 
