@@ -14,21 +14,24 @@
  *@rg_elmt: new region
  *
  */
-// int enlist_vm_freerg_list(struct mm_struct *mm, struct vm_rg_struct rg_elmt)
-// {
-//   struct vm_rg_struct *rg_node = mm->mmap->vm_freerg_list;
 
-//   if (rg_elmt.rg_start >= rg_elmt.rg_end)
-//     return -1;
+/*
+int enlist_vm_freerg_list(struct mm_struct *mm, struct vm_rg_struct rg_elmt)
+{
+  struct vm_rg_struct *rg_node = mm->mmap->vm_freerg_list;
 
-//   if (rg_node != NULL)
-//     rg_elmt.rg_next = rg_node;
+  if (rg_elmt.rg_start >= rg_elmt.rg_end)
+    return -1;
 
-//   /* Enlist the new region */
-//   mm->mmap->vm_freerg_list = &rg_elmt;
+  if (rg_node != NULL)
+    rg_elmt.rg_next = rg_node;
 
-//   return 0;
-// }
+  // Enlist the new region
+  mm->mmap->vm_freerg_list = &rg_elmt;
+
+  return 0;
+}
+*/
 
 int enlist_vm_freerg_list(struct mm_struct *mm, struct vm_rg_struct *rg_elmt)
 {
