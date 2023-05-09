@@ -120,6 +120,8 @@ int vmap_page_range(struct pcb_t *caller, // process call
     fpit = fpit->fp_next;
   }
 
+
+
    /* Tracking for later page replacement activities (if needed)
     * Enqueue new usage page */
   //  enlist_pgn_node(&caller->mm->fifo_pgn, pgn + pgit);
@@ -190,7 +192,7 @@ int alloc_pages_range(struct pcb_t *caller, int req_pgnum, struct framephy_struc
         delist_framephy_node(&caller->mram->used_fp_list, vicfpn);
         
         enlist_framephy_node(&caller->active_mswp->used_fp_list, dest_fpn);
-        delist_framephy_node(&caller->active_mswp->free_fp_list, dest_fpn);
+        // delist_framephy_node(&caller->active_mswp->free_fp_list, dest_fpn);
         /* Do we need to -----------------------------------------------------------------------------------------------------
             - Delist vicfpn     from    caller->mram->free_fp_list
             - Delist dest_fpn   from    caller->active_mswp->free_fp_list

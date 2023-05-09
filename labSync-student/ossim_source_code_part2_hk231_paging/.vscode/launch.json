@@ -5,7 +5,7 @@
         "name": "Debug C",
         "type": "cppdbg",
         "request": "launch",
-        "args": ["sched_0"],
+        "args": ["os_0_mlq_paging"],
         "stopAtEntry": false,
         "externalConsole": false,
         "cwd": "${workspaceFolder}",
