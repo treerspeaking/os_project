@@ -4,7 +4,7 @@
  * Memory management unit mm/mm.c
  */
 
-// 20:20 _ 09/05/2023
+// 20:20 _ 10/05/2023
 
 #include "mm.h"
 #include <stdlib.h>
@@ -80,7 +80,7 @@ int pte_set_fpn(uint32_t *pte, int fpn)
 
 
 /* 
- * vmap_page_range - map a range of page at aligned address
+ * vmap_page_range - map a range of page at aligned addresslist
  */
 int vmap_page_range(struct pcb_t *caller, // process call
                                 int addr, // start address which is aligned to pagesz
@@ -113,12 +113,9 @@ int vmap_page_range(struct pcb_t *caller, // process call
   // {
   //   /* Map the next frame in the list */
   //   pte_set_fpn(&caller->mm->pgd[pn + pgn], fpit->fpn);
-
   //   pgit++;
   //   ret_rg->rg_end += PAGE_SIZE;
-
   //   enlist_pgn_node(&caller->mm->fifo_pgn, pn + pgn);
-    
   //   pn++;
   //   fpit = fpit->fp_next;
   // }
@@ -168,7 +165,7 @@ int alloc_pages_range(struct pcb_t *caller, int req_pgnum, struct framephy_struc
   // struct framephy_struct *newfp_str;
 
   // for debugging
-  printf("\n\nI'm in alloc_pages_range()\n\n");
+  printf("\nI'm in alloc_pages_range()\n");
 
   for(pgit = 0; pgit < req_pgnum; pgit++)
   {

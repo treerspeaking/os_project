@@ -4,7 +4,7 @@
  * Virtual memory module mm/mm-vm.c
  */
 
-// 20:20 _ 09/05/2023
+// 20:20 _ 10/05/2023
 
 #include "string.h"
 #include "mm.h"
@@ -546,12 +546,15 @@ int find_victim_page(struct mm_struct *mm, int *retpgn)
 
   while (pg->pg_next)
   {
-    prev_pg = pg->pg_next;
-
+    prev_pg = pg;
     pg = pg->pg_next;  
   }
     
-  *retpgn = (pg->pgn);
+  *retpgn = pg->pgn;
+  if (prev_pg)
+    prev_pg->pg_next = NULL;
+  else mm->fifo_pgn = NULL;
+
 
   free(pg);
 
