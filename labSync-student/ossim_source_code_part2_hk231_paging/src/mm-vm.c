@@ -519,7 +519,7 @@ int inc_vma_limit(struct pcb_t *caller, int vmaid, int inc_sz)
   cur_vma->vm_end += inc_sz;
 
   // for debugging
-  printf("\n\ninc_vma_limit(): area->rg_start = %ld, area->rg_end = %ld\n\n", area->rg_start, area->rg_end);
+  printf("\ninc_vma_limit(): area->rg_start = %ld, area->rg_end = %ld\n", area->rg_start, area->rg_end);
   
   if (vm_map_ram(caller, area->rg_start, area->rg_end, 
                     old_end, incnumpage , newrg) < 0)
