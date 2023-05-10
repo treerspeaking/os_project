@@ -2,12 +2,14 @@
 #define QUEUE_H
 
 #include "common.h"
+//
+// why are there two redef in os-cfg.h and here
+//
+// #ifndef MLQ_SCHED
+// #define MLQ_SCHED
+// #endif
 
-#ifndef MLQ_SCHED
-#define MLQ_SCHED
-#endif
-
-#define MAX_PRIO 139
+// #define MAX_PRIO 139
 
 int queue_empty(void);
 

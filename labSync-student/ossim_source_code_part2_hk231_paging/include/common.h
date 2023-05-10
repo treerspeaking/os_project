@@ -81,6 +81,8 @@ struct pcb_t
 	// Priority on execution (if supported), on-fly aka. changeable
 	// and this vale overwrites the default priority when it existed
 	uint32_t prio;     
+    // The time slot this process is allow to run base on it queue remaining time_slot
+    unsigned int time_slot_allow;
 #endif
 #ifdef MM_PAGING
 	struct mm_struct *mm;
@@ -92,8 +94,6 @@ struct pcb_t
 	uint32_t bp;	// Break pointer
 
 };
-
-
 
 #endif
 
