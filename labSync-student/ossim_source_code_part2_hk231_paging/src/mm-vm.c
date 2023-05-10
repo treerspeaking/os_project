@@ -35,7 +35,7 @@ int enlist_vm_freerg_list(struct mm_struct *mm, struct vm_rg_struct rg_elmt)
 }
 */
 
-int enlist_vm_freerg_lists(struct mm_struct *mm, struct vm_rg_struct *rg_elmt)
+int enlist_vm_freerg_list(struct mm_struct *mm, struct vm_rg_struct *rg_elmt)
 {
   struct vm_rg_struct *rg_node = mm->mmap->vm_freerg_list;
 
@@ -245,8 +245,8 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
       vicpte = caller->mm->pgd[vicpgn];  // victim pte from victim page number
 
       // ---------------------------------------------------------------------------------------------------------
-      vicfpn = GETVAL(caller->mm->pgd[vicpgn], PAGING_PTE_FPN_MASK, 0);
-      // vicfpn = PAGING_FPN(caller->mm->pgd[vicpgn]);
+      // vicfpn = GETVAL(caller->mm->pgd[vicpgn], PAGING_PTE_FPN_MASK, 0);
+      vicfpn = PAGING_FPN(caller->mm->pgd[vicpgn]);
       // ---------------------------------------------------------------------------------------------------------
 
       /* Do swap frame from MEMRAM to MEMSWP and vice versa*/
@@ -510,6 +510,9 @@ int inc_vma_limit(struct pcb_t *caller, int vmaid, int inc_sz)
   /* The obtained vm area (only) 
    * now will be alloc real ram region */
   cur_vma->vm_end += inc_sz;
+  //debugging
+  printf("inc_vma_limit: %d  %d\n", area->rg_start, area->rg_end);
+  
   if (vm_map_ram(caller, area->rg_start, area->rg_end, 
                     old_end, incnumpage , newrg) < 0)
     return -1; /* Map the memory to MEMRAM */

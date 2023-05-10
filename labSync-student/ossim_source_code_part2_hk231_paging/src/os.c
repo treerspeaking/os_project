@@ -202,6 +202,9 @@ static void read_config(const char * path) {
 
 int main(int argc, char * argv[]) {
 	/* Read config */
+
+	// printf("%d\n", PAGE_SIZE);
+
 	if (argc != 2) {
 		printf("Usage: os [path to configure file]\n");
 		return 1;
@@ -276,7 +279,6 @@ int main(int argc, char * argv[]) {
 	stop_timer();
 
 	return 0;
-
 }
 
 

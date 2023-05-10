@@ -199,10 +199,13 @@ int alloc_pages_range(struct pcb_t *caller, int req_pgnum, struct framephy_struc
             - Delist vicfpn     from    caller->mram->free_fp_list
             - Delist dest_fpn   from    caller->active_mswp->free_fp_list
         */
+       
+        enlist_framephy_node(frm_lst, fpn);
+        enlist_pgn_node(&caller->mm->fifo_pgn, fpn);
       }
 
       // Enqueue the new frame's page number to fifo for replacement tracking
-      enlist_pgn_node(&caller->mm->fifo_pgn, fpn);
+      
     } 
   }
 
@@ -475,7 +478,7 @@ int print_pgtbl(struct pcb_t *caller, uint32_t start, uint32_t end)
   int pgn_start,pgn_end;
   int pgit;
 
-  if(end == -1){
+  if (end == -1){
     pgn_start = 0;
     struct vm_area_struct *cur_vma = get_vma_by_num(caller->mm, 0);
     end = cur_vma->vm_end;
