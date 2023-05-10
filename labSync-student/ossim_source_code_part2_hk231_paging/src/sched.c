@@ -5,10 +5,12 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+extern int time_slot;
 static struct queue_t ready_queue;
 static struct queue_t run_queue;
 static pthread_mutex_t queue_lock;
-
+#define TRUE 1
+#define FALSE 0
 #ifdef MLQ_SCHED
 static struct queue_t mlq_ready_queue[MAX_PRIO];
 #endif
@@ -27,14 +29,20 @@ void init_scheduler(void) {
 #ifdef MLQ_SCHED
     int i ;
 
-	for (i = 0; i < MAX_PRIO; i ++)
+	for (i = 0; i < MAX_PRIO; i ++){
 		mlq_ready_queue[i].size = 0;
+        mlq_ready_queue[i].slot_left = 140 - i;
+    }
 #endif
 	ready_queue.size = 0;
 	run_queue.size = 0;
 	pthread_mutex_init(&queue_lock, NULL);
 }
 
+void finish_scheduler (void)
+{
+    pthread_mutex_destroy(&queue_lock);
+}
 #ifdef MLQ_SCHED
 /* 
  *  Stateful design for routine calling
@@ -42,6 +50,11 @@ void init_scheduler(void) {
  *  We implement stateful here using transition technique
  *  State representation   prio = 0 .. MAX_PRIO, curr_slot = 0..(MAX_PRIO - prio)
  */
+void queue_time_reset(){
+    for (int i = 0; i < MAX_PRIO; i ++){
+        mlq_ready_queue[i].slot_left = 140 - i;
+    }
+}
 struct pcb_t * get_mlq_proc(void) {
 	struct pcb_t * proc = NULL;
 	/*TODO: get a process from PRIORITY [ready_queue].
@@ -51,19 +64,43 @@ struct pcb_t * get_mlq_proc(void) {
     //  for now could be improve
     // 
     pthread_mutex_lock(&queue_lock);
+    again:
     int i;
+    int proc_reset = FALSE;
     for(i = 0;i < MAX_PRIO;i++){
-        if(!empty(&mlq_ready_queue[i])) break;
+        if(!empty(&mlq_ready_queue[i]) ) {
+            if (mlq_ready_queue[i].slot_left > 0){
+                proc_reset = FALSE;
+                break;
+            }
+            else{
+                proc_reset = TRUE;
+            }
+        }
     }
-    if(i == MAX_PRIO){
+    if(i == MAX_PRIO){// no possible process
         // no queue
+        if(proc_reset == TRUE){
+            queue_time_reset();
+            goto again;// reset to take process from another queue
+        }
         pthread_mutex_unlock(&queue_lock);
         return NULL; 
     }
     // mlq_ready_queue[i]->size --; // could do mlq_mutex_lock
     // pthread_mutex_unlock(&queue_lock);
     // pthread_mutex_lock(mlq_ready_queue[i]->q_lock);
+    // need to add in stuff to reset slot_left;
     proc = dequeue(&mlq_ready_queue[i]);
+    if(mlq_ready_queue[i].slot_left > time_slot){
+        mlq_ready_queue[i].slot_left-= time_slot;
+        proc->time_slot_allow = time_slot;
+    }
+    else{
+         proc->time_slot_allow = mlq_ready_queue[i].slot_left;
+         mlq_ready_queue[i].slot_left = 0;
+    }
+    //proc->time_slot_allow = time_slot;
     pthread_mutex_unlock(&queue_lock);
 	return proc;	
 }
