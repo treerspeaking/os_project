@@ -94,6 +94,7 @@ int vmap_page_range(struct pcb_t *caller, // process call
   struct framephy_struct *fpit = malloc(sizeof(struct framephy_struct));
   // struct framephy_Struct *tmp = fpit;
 
+  printf("\nI'm in vmap_page_range()\n");
 
   ret_rg->rg_start = ret_rg->rg_end = addr; // at least the very first space is usable
 
@@ -108,21 +109,42 @@ int vmap_page_range(struct pcb_t *caller, // process call
   // int pgn = GETVAL() 
 
   int pn = 0;
-  while (fpit && pn < pgnum)
+  // while (fpit && pn < pgnum)
+  // {
+  //   /* Map the next frame in the list */
+  //   pte_set_fpn(&caller->mm->pgd[pn + pgn], fpit->fpn);
+
+  //   pgit++;
+  //   ret_rg->rg_end += PAGE_SIZE;
+
+  //   enlist_pgn_node(&caller->mm->fifo_pgn, pn + pgn);
+    
+  //   pn++;
+  //   fpit = fpit->fp_next;
+  // }
+
+  for (int pn = 0; pn < pgnum; pn++)
   {
+    if (!fpit)
+    {
+      // for debugging
+      printf("\nvmap_page_range()    !fpit\n");
+      break;
+    }
+
     /* Map the next frame in the list */
     pte_set_fpn(&caller->mm->pgd[pn + pgn], fpit->fpn);
 
     pgit++;
-    ret_rg->rg_end += PAGE_SIZE;
+    ret_rg->rg_end += PAGING_PAGESZ;
 
     enlist_pgn_node(&caller->mm->fifo_pgn, pn + pgn);
     
-    pn++;
     fpit = fpit->fp_next;
   }
 
-
+  // for debugging
+  printf("\nvmap_page_range():  pgit = %d    pgnum = %d\n", pgit , pgnum);
 
    /* Tracking for later page replacement activities (if needed)
     * Enqueue new usage page */
@@ -145,6 +167,9 @@ int alloc_pages_range(struct pcb_t *caller, int req_pgnum, struct framephy_struc
   int pgit, fpn;
   // struct framephy_struct *newfp_str;
 
+  // for debugging
+  printf("\n\nI'm in alloc_pages_range()\n\n");
+
   for(pgit = 0; pgit < req_pgnum; pgit++)
   {
     if(MEMPHY_get_freefp(caller->mram, &fpn) == 0)
@@ -160,7 +185,7 @@ int alloc_pages_range(struct pcb_t *caller, int req_pgnum, struct framephy_struc
       enlist_framephy_node(frm_lst, fpn);
 
       // Enqueue the new frame's page number to fifo for replacement tracking
-      enlist_pgn_node(&caller->mm->fifo_pgn, fpn);
+      // enlist_pgn_node(&caller->mm->fifo_pgn, caller->mm->pgd[fpn]);
 
     } else 
     {  // ERROR CODE of obtaining somes but not enough frames
@@ -169,7 +194,8 @@ int alloc_pages_range(struct pcb_t *caller, int req_pgnum, struct framephy_struc
       
       if (find_victim_page(caller->mm, &vicpgn) != 0)
       {
-        // ...
+        // for debugging
+        printf("alloc_pages_range  - find_victim_page() != 0");
       } else
       {
         vicpte = caller->mm->pgd[vicpgn];
@@ -190,8 +216,8 @@ int alloc_pages_range(struct pcb_t *caller, int req_pgnum, struct framephy_struc
         pte_set_swap(&caller->mm->pgd[vicpgn], 0, dest_fpn);
 
 
-        enlist_framephy_node(&caller->mram->free_fp_list, vicfpn);
-        delist_framephy_node(&caller->mram->used_fp_list, vicfpn);
+        // enlist_framephy_node(&caller->mram->free_fp_list, vicfpn);
+        // delist_framephy_node(&caller->mram->used_fp_list, vicfpn);
         
         enlist_framephy_node(&caller->active_mswp->used_fp_list, dest_fpn);
         // delist_framephy_node(&caller->active_mswp->free_fp_list, dest_fpn);
@@ -199,9 +225,9 @@ int alloc_pages_range(struct pcb_t *caller, int req_pgnum, struct framephy_struc
             - Delist vicfpn     from    caller->mram->free_fp_list
             - Delist dest_fpn   from    caller->active_mswp->free_fp_list
         */
-       
-        enlist_framephy_node(frm_lst, fpn);
-        enlist_pgn_node(&caller->mm->fifo_pgn, fpn);
+
+        enlist_framephy_node(frm_lst, vicfpn);
+        // enlist_pgn_node(&caller->mm->fifo_pgn, vicpgn);
       }
 
       // Enqueue the new frame's page number to fifo for replacement tracking
@@ -373,13 +399,16 @@ int delist_framephy_node(struct framephy_struct **framephylist, int fpn)
   }
   else while(fpnode)
   {
-    if (fpnode->fp_next && fpnode->fp_next->fpn == fpn)
+    if(fpnode->fp_next)
     {
-      struct framephy_struct* tmp = fpnode->fp_next;
-      fpnode->fp_next = tmp->fp_next;
-      free(tmp);
+      if (fpnode->fp_next->fpn == fpn)
+      {
+        struct framephy_struct* tmp = fpnode->fp_next;
+        fpnode->fp_next = tmp->fp_next;
+        free(tmp);
 
-      return 0;
+        return 0;
+      }
     }
 
     fpnode = fpnode->fp_next;

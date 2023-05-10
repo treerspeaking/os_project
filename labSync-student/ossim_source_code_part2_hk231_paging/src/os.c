@@ -204,6 +204,8 @@ static void read_config(const char * path) {
 int main(int argc, char * argv[]) {
 	/* Read config */
 
+	// printf("%d\n\n\n", PAGING_PTE_FPN_MASK);
+
 	// printf("%d\n", PAGE_SIZE);
 
 	if (argc != 2) {
