@@ -4,7 +4,8 @@
 #include <pthread.h>
 #include <stdint.h>
 
-struct timer_id_t {
+struct timer_id_t
+{
 	int done;
 	int fsh;
 	pthread_cond_t event_cond;

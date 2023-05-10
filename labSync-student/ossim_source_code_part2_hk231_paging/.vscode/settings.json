@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "os-cfg.h": "c",
+        "mm.h": "c"
         "stdint.h": "c",
         "string.h": "c",
         "stdio.h": "c",

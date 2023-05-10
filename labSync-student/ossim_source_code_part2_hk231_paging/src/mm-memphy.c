@@ -4,6 +4,8 @@
  * Memory physical module mm/mm-memphy.c
  */
 
+// 20:20 _ 09/05/2023
+
 #include "mm.h"
 #include <stdlib.h>
 
@@ -157,11 +159,25 @@ int MEMPHY_get_freefp(struct memphy_struct *mp, int *retfpn)
 
 int MEMPHY_dump(struct memphy_struct * mp)
 {
-    /*TODO dump memphy contnt mp->storage 
-     *     for tracing the memory content
-     */
+   /*TODO dump memphy content mp->storage 
+   *     for tracing the memory content
+   */
 
-    return 0;
+
+   // From CHAT-GPT with love ---------------------------------------------------------------------
+   
+   // int MEMPHY_SIZE = 123456; // MEMPHY_SIZE = ????
+   // for (int i = 0; i < mp->maxsz; i++)
+   // {
+   //    printf("%02x ", mp->storage[i]);
+
+   //    if ((i + 1) % 16 == 0)
+   //       printf("\n");// print a newline every 16 bytes
+   // }
+   // printf("\n");
+   // ----------------------------------------------------------------------------
+
+   return 0;
 }
 
 int MEMPHY_put_freefp(struct memphy_struct *mp, int fpn)
