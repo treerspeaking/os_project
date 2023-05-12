@@ -1,0 +1,4 @@
+1 3
+alloc 300 0
+alloc 300 0
+write 102 0 20

@@ -62,6 +62,9 @@ int run(struct pcb_t * proc) {
 #ifdef MM_PAGING
 		stat = pgalloc(proc, ins.arg_0, ins.arg_1);
 
+		// for debugging
+		// print_pgtbl(proc, 0, -1);
+
 #else
 		stat = alloc(proc, ins.arg_0, ins.arg_1);
 #endif
@@ -69,6 +72,9 @@ int run(struct pcb_t * proc) {
 	case FREE:
 #ifdef MM_PAGING
 		stat = pgfree_data(proc, ins.arg_0);
+
+				// for debugging
+		// print_pgtbl(proc, 0, -1);
 #else
 		stat = free_data(proc, ins.arg_0);
 #endif

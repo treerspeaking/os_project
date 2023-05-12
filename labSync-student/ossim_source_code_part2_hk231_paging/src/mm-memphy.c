@@ -143,6 +143,8 @@ int MEMPHY_get_freefp(struct memphy_struct *mp, int *retfpn)
 {
    struct framephy_struct *fp = mp->free_fp_list;
 
+   pthread_mutex_init(&mp->mtx, NULL); pthread_mutex_lock(&mp->mtx);
+
    if (fp == NULL)
      return -1;
 
@@ -154,6 +156,9 @@ int MEMPHY_get_freefp(struct memphy_struct *mp, int *retfpn)
     */
    free(fp);
 
+   pthread_mutex_unlock(&mp->mtx); pthread_mutex_destroy(&mp->mtx);
+
+
    return 0;
 }
 
@@ -163,22 +168,34 @@ int MEMPHY_dump(struct memphy_struct * mp)
    *     for tracing the memory content
    */
 
-
    // From CHAT-GPT with love ---------------------------------------------------------------------
-   
-   // int MEMPHY_SIZE = 123456; // MEMPHY_SIZE = ????
-   // for (int i = 0; i < mp->maxsz; i++)
-   // {
-   //    printf("%02x ", mp->storage[i]);
+   int count = -1;
 
-   //    if ((i + 1) % 16 == 0)
-   //       printf("\n");// print a newline every 16 bytes
-   // }
-   // printf("\n");
+   printf("------------------------ RAM_STATUS ------------------------\n");
+
+   for (int i = 0; i < mp->maxsz; i++)
+   {
+      if (mp->storage[i] != 0) 
+      {
+         if (count == -1) count = 1;
+         printf("%d ", mp->storage[i]);
+         
+         if (count == 8)
+         {
+            printf("\n");
+            count = 1;
+         }
+         count++;
+      }
+   }
+   if (count == -1) printf("Nothing in RAM!");
+   printf("\n");
    // ----------------------------------------------------------------------------
 
    return 0;
 }
+
+
 
 int MEMPHY_put_freefp(struct memphy_struct *mp, int fpn)
 {

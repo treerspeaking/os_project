@@ -203,6 +203,9 @@ static void read_config(const char * path) {
 
 int main(int argc, char * argv[]) {
 	/* Read config */
+
+	// printf("%b  %d\n", PAGING_PGN_MASK, PAGING_ADDR_PGN_LOBIT);
+
 	if (argc != 2) {
 		printf("Usage: os [path to configure file]\n");
 		return 1;
@@ -238,7 +241,7 @@ int main(int argc, char * argv[]) {
 	/* Create MEM RAM */
 	init_memphy(&mram, memramsz, rdmflag);
 
-        /* Create all MEM SWAP */ 
+ /* Create all MEM SWAP */ 
 	int sit;
 	for(sit = 0; sit < PAGING_MAX_MMSWP; sit++)
 	       init_memphy(&mswp[sit], memswpsz[sit], rdmflag);
@@ -277,7 +280,6 @@ int main(int argc, char * argv[]) {
 	stop_timer();
 
 	return 0;
-
 }
 
 
