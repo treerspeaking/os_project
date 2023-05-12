@@ -1,18 +1,22 @@
 #ifndef OSMM_H
 #define OSMM_H
 
+#include <bits/pthreadtypes.h>
+
 #define MM_PAGING
 #define PAGING_MAX_MMSWP 4 /* max number of supported swapped space */
 #define PAGING_MAX_SYMTBL_SZ 30
 
 typedef char BYTE;
 typedef uint32_t addr_t;
-//typedef unsigned int uint32_t;
+typedef unsigned int uint32_t;
 
 struct pgn_t
 {
    int pgn;
    struct pgn_t *pg_next; 
+
+   // pthread_mutex_t mtx;
 };
 
 /*
@@ -24,6 +28,8 @@ struct vm_rg_struct
    unsigned long rg_end;
 
    struct vm_rg_struct *rg_next;
+
+   // pthread_mutex_t mtx;
 };
 
 /*
@@ -59,6 +65,8 @@ struct mm_struct
 
    /* list of free page */
    struct pgn_t *fifo_pgn;
+
+   pthread_mutex_t mtx;
 };
 
 /*
@@ -71,6 +79,8 @@ struct framephy_struct
 
    /* Resereed for tracking allocated framed */
    struct mm_struct* owner;
+
+   // pthread_mutex_t mtx;
 };
 
 struct memphy_struct
@@ -87,7 +97,7 @@ struct memphy_struct
    struct framephy_struct *free_fp_list;
    struct framephy_struct *used_fp_list;
 
-   // pthread_mutex_t mtx;
+   pthread_mutex_t mtx;
 };
 
 #endif
