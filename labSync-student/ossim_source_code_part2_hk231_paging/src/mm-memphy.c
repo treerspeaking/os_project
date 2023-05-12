@@ -169,16 +169,26 @@ int MEMPHY_dump(struct memphy_struct * mp)
    */
 
    // From CHAT-GPT with love ---------------------------------------------------------------------
+   int count = -1;
 
    printf("------------------------ RAM_STATUS ------------------------\n");
 
    for (int i = 0; i < mp->maxsz; i++)
    {
-      printf("%d ", mp->storage[i]);
-
-      if ((i + 1) % 32 == 0)
-         printf("\n");// print a newline every 16 bytes
+      if (mp->storage[i] != 0) 
+      {
+         if (count == -1) count = 1;
+         printf("%d ", mp->storage[i]);
+         
+         if (count == 8)
+         {
+            printf("\n");
+            count = 1;
+         }
+         count++;
+      }
    }
+   if (count == -1) printf("Nothing in RAM!");
    printf("\n");
    // ----------------------------------------------------------------------------
 

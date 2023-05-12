@@ -99,13 +99,17 @@ struct vm_rg_struct *get_symrg_byid(struct mm_struct *mm, int rgid)
  */
 int __alloc(struct pcb_t *caller, int vmaid, int rgid, int size, int *alloc_addr)
 {
-  printf("\n__alloc\n");
+  // for debugging
+  // printf("\n__alloc\n");
+
   /*Allocate at the toproof */
   struct vm_rg_struct rgnode;
 
   if (get_free_vmrg_area(caller, vmaid, size, &rgnode) == 0)
   {
-    printf("\n__alloc: inside if\n");
+    // for debugging
+    // printf("\n__alloc: inside if\n");
+    
     caller->mm->symrgtbl[rgid].rg_start = rgnode.rg_start;
     caller->mm->symrgtbl[rgid].rg_end = rgnode.rg_end;
 
@@ -410,6 +414,7 @@ int pgwrite(
 #endif
 
   return __write(proc, 0, destination, offset, data);
+  // __write(struct pcb_t *caller, int vmaid, int rgid, int offset, BYTE value);
 }
 
 

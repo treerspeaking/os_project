@@ -108,7 +108,6 @@ int vmap_page_range(struct pcb_t *caller, // process call
    */
   int pgn = PAGING_PGN(addr); // the first expanded page at addr
 
-  int pn = 0;
   // while (fpit && pn < pgnum)
   // {
   //   /* Map the next frame in the list */
