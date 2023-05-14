@@ -189,7 +189,8 @@ int MEMPHY_dump(struct memphy_struct * mp)
       }
    }
    if (count == -1) printf("Nothing in RAM!");
-   printf("\n");
+
+   printf("\n---\n");
    // ----------------------------------------------------------------------------
 
    return 0;

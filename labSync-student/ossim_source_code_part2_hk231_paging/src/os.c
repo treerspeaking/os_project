@@ -204,7 +204,9 @@ static void read_config(const char * path) {
 int main(int argc, char * argv[]) {
 	/* Read config */
 
-	// printf("%b  %d\n", PAGING_PGN_MASK, PAGING_ADDR_PGN_LOBIT);
+	// for debugging
+	// printf("%b  %d\n", PAGING_PTE_SWPOFF_MASK, PAGING_SWPFPN_OFFSET);
+	// printf("%b\n", PAGING_PTE_PRESENT_MASK);
 
 	if (argc != 2) {
 		printf("Usage: os [path to configure file]\n");

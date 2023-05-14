@@ -163,6 +163,10 @@ int __free(struct pcb_t *caller, int vmaid, int rgid)
   rgnode->rg_end = caller->mm->symrgtbl[rgid].rg_end;
   rgnode->rg_next = NULL;
 
+  // caller->mm->symrgtbl[rgid].rg_end = caller->mm->symrgtbl[rgid].rg_start;
+  // struct vm_area_struct *cur_vma = get_vma_by_num(caller->mm, 0);
+  // cur_vma->vm_end = cur_vma->vm_end - PAGING_PAGE_ALIGNSZ(caller->mm->symrgtbl[rgid].rg_end - caller->mm->symrgtbl[rgid].rg_start);
+
   /*enlist the obsoleted memory region */
   enlist_vm_freerg_list(caller->mm, rgnode);
 
@@ -211,28 +215,19 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
     int vicfpn;
     uint32_t vicpte;
 
-    int tgtfpn = PAGING_SWP(pte); //the target frame storing our variable
+    // int tgtfpn = PAGING_SWP(pte); //the target frame storing our variable --> wrong built macro
+    int tgtfpn = GETVAL(pte, PAGING_PTE_SWPOFF_MASK, PAGING_SWPFPN_OFFSET);
 
     /* TODO: Play with your paging theory here */
 
-    // ---------------------------------------------------------------
     if (MEMPHY_get_freefp(caller->mram, &swpfpn) == 0)
     {
       __swap_cp_page(caller->active_mswp, tgtfpn, caller->mram, swpfpn);
 
-      struct framephy_struct *newFreeframe = malloc(sizeof(struct framephy_struct));
-      newFreeframe->fpn = tgtfpn;
-
-      // caller->active_mswp->used_fp_list   Get the used frame out
-
-      newFreeframe->fp_next = caller->active_mswp->free_fp_list;
-      caller->active_mswp->free_fp_list = newFreeframe;
-
       pte_set_fpn(&caller->mm->pgd[pgn], tgtfpn);
 
-
-      enlist_framephy_node(&caller->active_mswp->free_fp_list, tgtfpn);
-      // delist_framephy_node(&caller->active_mswp->used_fp_list, tgtfpn);
+      // enlist_framephy_node(&caller->active_mswp->free_fp_list, tgtfpn);
+      // delist_framephy_node(&caller->active_mswp->used_fp_list, swpfpn);
 
       enlist_framephy_node(&caller->mram->used_fp_list, swpfpn);
 
@@ -250,10 +245,9 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
         return -1;
       }
       
-
+      
       vicpte = caller->mm->pgd[vicpgn];  // victim pte from victim page number
-
-      vicfpn = GETVAL(caller->mm->pgd[vicpgn], PAGING_PTE_FPN_MASK, 0);
+      vicfpn = GETVAL(vicpte, PAGING_PTE_FPN_MASK, 0);
       // vicfpn = PAGING_FPN(caller->mm->pgd[vicpgn]);
 
       /* Do swap frame from MEMRAM to MEMSWP and vice versa*/
@@ -272,14 +266,14 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
       // enlist_framephy_node(&caller->active_mswp->free_fp_list, tgtfpn);
       // delist_framephy_node(&caller->active_mswp->used_fp_list, tgtfpn);
 
-      delist_framephy_node(&caller->active_mswp->free_fp_list, swpfpn);
+      // delist_framephy_node(&caller->active_mswp->free_fp_list, swpfpn);
       // enlist_framephy_node(&caller->active_mswp->used_fp_list, swpfpn);
 
       enlist_pgn_node(&caller->mm->fifo_pgn, pgn);
     }
   }
   
-  // *fpn = PAGING_FPN(pte);
+  // *fpn = PAGING_FPN(pte); // Wrong built macro
   *fpn = GETVAL(pte, PAGING_PTE_FPN_MASK, 0);
 
   return 0;
@@ -440,7 +434,9 @@ int free_pcb_memph(struct pcb_t *caller)
 
       MEMPHY_put_freefp(caller->mram, fpn);
     } else {
-      fpn = PAGING_SWP(pte);
+      // fpn = PAGING_SWP(pte);
+      fpn = GETVAL(pte, PAGING_PTE_SWPOFF_MASK, PAGING_SWPFPN_OFFSET);
+
       MEMPHY_put_freefp(caller->active_mswp, fpn);    
     }
   }

@@ -108,17 +108,6 @@ int vmap_page_range(struct pcb_t *caller, // process call
    */
   int pgn = PAGING_PGN(addr); // the first expanded page at addr
 
-  // while (fpit && pn < pgnum)
-  // {
-  //   /* Map the next frame in the list */
-  //   pte_set_fpn(&caller->mm->pgd[pn + pgn], fpit->fpn);
-  //   pgit++;
-  //   ret_rg->rg_end += PAGE_SIZE;
-  //   enlist_pgn_node(&caller->mm->fifo_pgn, pn + pgn);
-  //   pn++;
-  //   fpit = fpit->fp_next;
-  // }
-
   for (int pn = 0; pn < pgnum; pn++)
   {
     if (!fpit)
@@ -128,7 +117,7 @@ int vmap_page_range(struct pcb_t *caller, // process call
       break;
     }
 
-    /* Map the next frame in the list */
+    /* Map the frame in the list */
     pgit++;
     ret_rg->rg_end += PAGING_PAGESZ;
 
