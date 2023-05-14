@@ -143,7 +143,7 @@ int MEMPHY_get_freefp(struct memphy_struct *mp, int *retfpn)
 {
    struct framephy_struct *fp = mp->free_fp_list;
 
-   pthread_mutex_init(&mp->mtx, NULL); pthread_mutex_lock(&mp->mtx);
+   pthread_mutex_lock(&mp->mtx);
 
    if (fp == NULL)
      return -1;
@@ -156,8 +156,7 @@ int MEMPHY_get_freefp(struct memphy_struct *mp, int *retfpn)
     */
    free(fp);
 
-   pthread_mutex_unlock(&mp->mtx); pthread_mutex_destroy(&mp->mtx);
-
+   pthread_mutex_unlock(&mp->mtx);
 
    return 0;
 }
@@ -226,6 +225,8 @@ int init_memphy(struct memphy_struct *mp, int max_size, int randomflg)
 
    if (!mp->rdmflg )   /* Not Ramdom acess device, then it serial device*/
       mp->cursor = 0;
+
+   pthread_mutex_init(&mp->mtx, NULL);
 
    return 0;
 }

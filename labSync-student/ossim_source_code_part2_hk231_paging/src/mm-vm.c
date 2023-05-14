@@ -484,7 +484,7 @@ int validate_overlap_vm_area(struct pcb_t *caller, int vmaid, int vmastart, int 
     // Check if the new memory range overlaps with the current vm_area_struct
     // if (OVERLAP(vma->vm_start, vmastart, vmaend, vma->vm_end) == 0)
     //   return -1;
-    vma = vma->vm_next;
+    // vma = vma->vm_next;
   }
 
   return 0;

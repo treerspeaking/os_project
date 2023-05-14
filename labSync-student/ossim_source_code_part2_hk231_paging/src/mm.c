@@ -121,9 +121,9 @@ int vmap_page_range(struct pcb_t *caller, // process call
     pgit++;
     ret_rg->rg_end += PAGING_PAGESZ;
 
-    pthread_mutex_init(&caller->mm->mtx, NULL); pthread_mutex_lock(&caller->mm->mtx);
+    // pthread_mutex_init(&caller->mm->mtx, NULL); pthread_mutex_lock(&caller->mm->mtx);
     pte_set_fpn(&caller->mm->pgd[pn + pgn], fpit->fpn);
-    pthread_mutex_unlock(&caller->mm->mtx); pthread_mutex_destroy(&caller->mm->mtx);
+    // pthread_mutex_unlock(&caller->mm->mtx); pthread_mutex_destroy(&caller->mm->mtx);
 
     enlist_pgn_node(&caller->mm->fifo_pgn, pn + pgn);
 
@@ -153,6 +153,11 @@ int alloc_pages_range(struct pcb_t *caller, int req_pgnum, struct framephy_struc
 
   // for debugging
   // printf("\nalloc_pages_range()\n");
+
+  // Not enough RAM to alloc the required page num
+  if ((req_pgnum * PAGING_PAGESZ) > caller->mram->maxsz)
+    return -3000; 
+
 
   for(pgit = 0; pgit < req_pgnum; pgit++)
   {
@@ -202,11 +207,11 @@ int alloc_pages_range(struct pcb_t *caller, int req_pgnum, struct framephy_struc
         /* Update page table */
         pte_set_swap(&caller->mm->pgd[vicpgn], 0, dest_fpn);
         
-        pthread_mutex_init(&caller->active_mswp->mtx, NULL); pthread_mutex_lock(&caller->active_mswp->mtx);
+        pthread_mutex_lock(&caller->active_mswp->mtx);
         enlist_framephy_node(&caller->active_mswp->used_fp_list, dest_fpn);
-        pthread_mutex_unlock(&caller->active_mswp->mtx); pthread_mutex_destroy(&caller->active_mswp->mtx);
+        pthread_mutex_unlock(&caller->active_mswp->mtx);
 
-        enlist_framephy_node(frm_lst, vicfpn); 
+        enlist_framephy_node(frm_lst, vicfpn);
       }
     } 
   }
