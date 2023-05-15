@@ -28,8 +28,6 @@ struct vm_rg_struct
    unsigned long rg_end;
 
    struct vm_rg_struct *rg_next;
-
-   // pthread_mutex_t mtx;
 };
 
 /*
@@ -65,8 +63,6 @@ struct mm_struct
 
    /* list of free page */
    struct pgn_t *fifo_pgn;
-
-   pthread_mutex_t mtx;
 };
 
 /*
@@ -79,8 +75,6 @@ struct framephy_struct
 
    /* Resereed for tracking allocated framed */
    struct mm_struct* owner;
-
-   // pthread_mutex_t mtx;
 };
 
 struct memphy_struct

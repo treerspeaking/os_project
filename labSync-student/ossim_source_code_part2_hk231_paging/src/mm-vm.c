@@ -163,7 +163,6 @@ int __free(struct pcb_t *caller, int vmaid, int rgid)
   rgnode->rg_end = caller->mm->symrgtbl[rgid].rg_end;
   rgnode->rg_next = NULL;
 
-  // caller->mm->symrgtbl[rgid].rg_end = caller->mm->symrgtbl[rgid].rg_start;
   // struct vm_area_struct *cur_vma = get_vma_by_num(caller->mm, 0);
   // cur_vma->vm_end = cur_vma->vm_end - PAGING_PAGE_ALIGNSZ(caller->mm->symrgtbl[rgid].rg_end - caller->mm->symrgtbl[rgid].rg_start);
 
@@ -478,13 +477,12 @@ int validate_overlap_vm_area(struct pcb_t *caller, int vmaid, int vmastart, int 
 
   /* TODO validate the planned memory area is not overlapped */
 
-  // Check if the new memory range overlaps with any existing vm_area_struct
+  // Check if the new memory range overlaps with the current vm_area_struct
   while (vma)
   {
-    // Check if the new memory range overlaps with the current vm_area_struct
     // if (OVERLAP(vma->vm_start, vmastart, vmaend, vma->vm_end) == 0)
     //   return -1;
-    // vma = vma->vm_next;
+    vma = vma->vm_next;
   }
 
   return 0;
@@ -522,7 +520,6 @@ int inc_vma_limit(struct pcb_t *caller, int vmaid, int inc_sz)
     return -1; /* Map the memory to MEMRAM */
 
   return 0;
-
 }
 
 /*find_victim_page - find victim page
@@ -535,8 +532,6 @@ int find_victim_page(struct mm_struct *mm, int *retpgn)
   struct pgn_t *pg = mm->fifo_pgn;
 
   /* TODO: Implement the theorical mechanism to find the victim page */
-
-  // pthread_mutex_init(&mm->mtx, NULL); pthread_mutex_lock(&mm->mtx);
   
   if (!pg) return -1;
   
@@ -551,11 +546,9 @@ int find_victim_page(struct mm_struct *mm, int *retpgn)
   *retpgn = pg->pgn;
   if (prev_pg)
     prev_pg->pg_next = NULL;
-  else mm->fifo_pgn = NULL; // fifo_pgn has only 1 node
+  else mm->fifo_pgn = NULL; // fifo_pgn list has only 1 node
 
   free(pg);
-
-  // pthread_mutex_unlock(&mm->mtx); pthread_mutex_destroy(&mm->mtx); 
 
   return 0;
 }
@@ -568,8 +561,9 @@ int find_victim_page(struct mm_struct *mm, int *retpgn)
  */
 int get_free_vmrg_area(struct pcb_t *caller, int vmaid, int size, struct vm_rg_struct *newrg)
 {
-  struct vm_area_struct *cur_vma = get_vma_by_num(caller->mm, vmaid);
+  // pthread_mutex_lock(&caller->mm->mtx);
 
+  struct vm_area_struct *cur_vma = get_vma_by_num(caller->mm, vmaid);
   struct vm_rg_struct *rgit = cur_vma->vm_freerg_list;
 
   if (rgit == NULL)
@@ -619,10 +613,12 @@ int get_free_vmrg_area(struct pcb_t *caller, int vmaid, int size, struct vm_rg_s
     }
   }
 
- if(newrg->rg_start == -1) // new region not found
-   return -1;
+  if(newrg->rg_start == -1) // new region not found
+    return -1;
 
- return 0;
+  // pthread_mutex_unlock(&caller->mm->mtx);
+
+  return 0;
 }
 
 

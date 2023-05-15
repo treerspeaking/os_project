@@ -143,10 +143,10 @@ int MEMPHY_get_freefp(struct memphy_struct *mp, int *retfpn)
 {
    struct framephy_struct *fp = mp->free_fp_list;
 
-   pthread_mutex_lock(&mp->mtx);
-
    if (fp == NULL)
      return -1;
+
+   pthread_mutex_lock(&mp->mtx);
 
    *retfpn = fp->fpn;
    mp->free_fp_list = fp->fp_next;
