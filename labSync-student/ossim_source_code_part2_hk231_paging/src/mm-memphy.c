@@ -143,10 +143,10 @@ int MEMPHY_get_freefp(struct memphy_struct *mp, int *retfpn)
 {
    struct framephy_struct *fp = mp->free_fp_list;
 
-   pthread_mutex_init(&mp->mtx, NULL); pthread_mutex_lock(&mp->mtx);
-
    if (fp == NULL)
      return -1;
+
+   pthread_mutex_lock(&mp->mtx);
 
    *retfpn = fp->fpn;
    mp->free_fp_list = fp->fp_next;
@@ -156,8 +156,7 @@ int MEMPHY_get_freefp(struct memphy_struct *mp, int *retfpn)
     */
    free(fp);
 
-   pthread_mutex_unlock(&mp->mtx); pthread_mutex_destroy(&mp->mtx);
-
+   pthread_mutex_unlock(&mp->mtx);
 
    return 0;
 }
@@ -168,9 +167,8 @@ int MEMPHY_dump(struct memphy_struct * mp)
    *     for tracing the memory content
    */
 
-   // From CHAT-GPT with love ---------------------------------------------------------------------
    int count = -1;
-
+   
    printf("------------------------ RAM_STATUS ------------------------\n");
 
    for (int i = 0; i < mp->maxsz; i++)
@@ -189,8 +187,8 @@ int MEMPHY_dump(struct memphy_struct * mp)
       }
    }
    if (count == -1) printf("Nothing in RAM!");
-   printf("\n");
-   // ----------------------------------------------------------------------------
+
+   printf("\n------------------------------------------------------------\n");
 
    return 0;
 }
@@ -225,6 +223,8 @@ int init_memphy(struct memphy_struct *mp, int max_size, int randomflg)
 
    if (!mp->rdmflg )   /* Not Ramdom acess device, then it serial device*/
       mp->cursor = 0;
+
+   pthread_mutex_init(&mp->mtx, NULL);
 
    return 0;
 }

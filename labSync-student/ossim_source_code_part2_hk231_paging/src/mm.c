@@ -108,42 +108,26 @@ int vmap_page_range(struct pcb_t *caller, // process call
    */
   int pgn = PAGING_PGN(addr); // the first expanded page at addr
 
-  // while (fpit && pn < pgnum)
-  // {
-  //   /* Map the next frame in the list */
-  //   pte_set_fpn(&caller->mm->pgd[pn + pgn], fpit->fpn);
-  //   pgit++;
-  //   ret_rg->rg_end += PAGE_SIZE;
-  //   enlist_pgn_node(&caller->mm->fifo_pgn, pn + pgn);
-  //   pn++;
-  //   fpit = fpit->fp_next;
-  // }
-
   for (int pn = 0; pn < pgnum; pn++)
   {
     if (!fpit)
     {
-      // for debugging
-      // printf("vmap_page_range()    !fpit\n");
+      // printf("vmap_page_range()    !fpit\n");    // for debugging
       break;
     }
 
-    /* Map the next frame in the list */
+    /* Map the frame in the list */
     pgit++;
     ret_rg->rg_end += PAGING_PAGESZ;
 
-    pthread_mutex_init(&caller->mm->mtx, NULL); pthread_mutex_lock(&caller->mm->mtx);
     pte_set_fpn(&caller->mm->pgd[pn + pgn], fpit->fpn);
-    pthread_mutex_unlock(&caller->mm->mtx); pthread_mutex_destroy(&caller->mm->mtx);
-
     enlist_pgn_node(&caller->mm->fifo_pgn, pn + pgn);
 
     fpit = fpit->fp_next;
   }
 
-  // for debugging
-  // printf("vmap_page_range():  pgit = %d    pgnum = %d\n\n", pgit , pgnum);
-
+  
+  // printf("vmap_page_range():  pgit = %d    pgnum = %d\n\n", pgit , pgnum);   // for debugging
   // free (tmp);
 
   return 0;
@@ -165,13 +149,14 @@ int alloc_pages_range(struct pcb_t *caller, int req_pgnum, struct framephy_struc
   // for debugging
   // printf("\nalloc_pages_range()\n");
 
+  // Not enough RAM to alloc the required page num
+  if ((req_pgnum * PAGING_PAGESZ) > caller->mram->maxsz)
+    return -3000; 
+
+
   for(pgit = 0; pgit < req_pgnum; pgit++)
   {
-    // pthread_mutex_init(&caller->mram->mtx, NULL); pthread_mutex_lock(&caller->mram->mtx);
-    // check = MEMPHY_get_freefp(caller->mram, &fpn);
-    // pthread_mutex_unlock(&caller->mram->mtx); pthread_mutex_destroy(&caller->mram->mtx);
-    // --> Had added mutex into function MEMPHY_get_freefp
-    
+
     if(MEMPHY_get_freefp(caller->mram, &fpn) == 0)
     {
       enlist_framephy_node(frm_lst, fpn);
@@ -196,11 +181,6 @@ int alloc_pages_range(struct pcb_t *caller, int req_pgnum, struct framephy_struc
 
         int dest_fpn;
 
-        // pthread_mutex_init(&caller->active_mswp->mtx, NULL); pthread_mutex_lock(&caller->active_mswp->mtx);
-        // check = MEMPHY_get_freefp(caller->active_mswp, &dest_fpn);
-        // pthread_mutex_unlock(&caller->active_mswp->mtx); pthread_mutex_destroy(&caller->active_mswp->mtx);
-        //--> Had added mutex into function MEMPHY_get_freefp
-
         if (MEMPHY_get_freefp(caller->active_mswp, &dest_fpn) != 0)
         {
           printf("ERROR: Cannot get free frame from physical memory  -  alloc_pages_range()\n");
@@ -213,11 +193,11 @@ int alloc_pages_range(struct pcb_t *caller, int req_pgnum, struct framephy_struc
         /* Update page table */
         pte_set_swap(&caller->mm->pgd[vicpgn], 0, dest_fpn);
         
-        pthread_mutex_init(&caller->active_mswp->mtx, NULL); pthread_mutex_lock(&caller->active_mswp->mtx);
+        pthread_mutex_lock(&caller->active_mswp->mtx);
         enlist_framephy_node(&caller->active_mswp->used_fp_list, dest_fpn);
-        pthread_mutex_unlock(&caller->active_mswp->mtx); pthread_mutex_destroy(&caller->active_mswp->mtx);
+        pthread_mutex_unlock(&caller->active_mswp->mtx);
 
-        enlist_framephy_node(frm_lst, vicfpn); 
+        enlist_framephy_node(frm_lst, vicfpn);
       }
     } 
   }
@@ -308,6 +288,8 @@ int init_mm(struct mm_struct *mm, struct pcb_t *caller)
 {
   struct vm_area_struct * vma = malloc(sizeof(struct vm_area_struct));
 
+  // pthread_mutex_init(&vma->mtx, NULL);
+
   mm->pgd = malloc(PAGING_MAX_PGN*sizeof(uint32_t));
 
   /* By default the owner comes with at least one vma */
@@ -315,6 +297,7 @@ int init_mm(struct mm_struct *mm, struct pcb_t *caller)
   vma->vm_start = 0;
   vma->vm_end = vma->vm_start;
   vma->sbrk = vma->vm_start;
+
   struct vm_rg_struct *first_rg = init_vm_rg(vma->vm_start, vma->vm_end);
   enlist_vm_rg_node(&vma->vm_freerg_list, first_rg);
 
@@ -339,10 +322,10 @@ struct vm_rg_struct* init_vm_rg(int rg_start, int rg_end)
 
 int enlist_vm_rg_node(struct vm_rg_struct **rglist, struct vm_rg_struct* rgnode)
 {
-  // pthread_mutex_init(&(*rglist)->mtx, NULL); pthread_mutex_lock(&(*rglist)->mtx);
+  // pthread_mutex_lock(&(*rglist)->mtx);
   rgnode->rg_next = *rglist;
   *rglist = rgnode;
-  // pthread_mutex_unlock(&(*rglist)->mtx); pthread_mutex_destroy(&(*rglist)->mtx);
+  // pthread_mutex_unlock(&(*rglist)->mtx);
 
   return 0;
 }
@@ -377,18 +360,6 @@ int enlist_framephy_node(struct framephy_struct **framephylist, int fpn)
 int delist_framephy_node(struct framephy_struct **framephylist, int fpn)
 {
   struct framephy_struct* fpnode = *framephylist;
-
-  // while(fpnode)
-  // {
-  //   if (fpnode->fpn == fpn)
-  //   {
-  //     delist_framephy_node_idx(framephylist, idx);
-  //     return 0;
-  //   }
-  //
-  //   idx++;
-  //   fpnode = fpnode->fp_next;
-  // }
 
   if (fpnode) return -1;
 

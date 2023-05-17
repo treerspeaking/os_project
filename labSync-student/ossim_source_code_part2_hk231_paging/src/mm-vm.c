@@ -211,28 +211,16 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
     int vicfpn;
     uint32_t vicpte;
 
-    int tgtfpn = PAGING_SWP(pte); //the target frame storing our variable
+    // int tgtfpn = PAGING_SWP(pte); //the target frame storing our variable --> wrong built macro
+    int tgtfpn = GETVAL(pte, PAGING_PTE_SWPOFF_MASK, PAGING_SWPFPN_OFFSET);
 
     /* TODO: Play with your paging theory here */
 
-    // ---------------------------------------------------------------
     if (MEMPHY_get_freefp(caller->mram, &swpfpn) == 0)
     {
       __swap_cp_page(caller->active_mswp, tgtfpn, caller->mram, swpfpn);
 
-      struct framephy_struct *newFreeframe = malloc(sizeof(struct framephy_struct));
-      newFreeframe->fpn = tgtfpn;
-
-      // caller->active_mswp->used_fp_list   Get the used frame out
-
-      newFreeframe->fp_next = caller->active_mswp->free_fp_list;
-      caller->active_mswp->free_fp_list = newFreeframe;
-
       pte_set_fpn(&caller->mm->pgd[pgn], tgtfpn);
-
-
-      enlist_framephy_node(&caller->active_mswp->free_fp_list, tgtfpn);
-      // delist_framephy_node(&caller->active_mswp->used_fp_list, tgtfpn);
 
       enlist_framephy_node(&caller->mram->used_fp_list, swpfpn);
 
@@ -250,11 +238,10 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
         return -1;
       }
       
-
+      
       vicpte = caller->mm->pgd[vicpgn];  // victim pte from victim page number
-
-      vicfpn = GETVAL(caller->mm->pgd[vicpgn], PAGING_PTE_FPN_MASK, 0);
-      // vicfpn = PAGING_FPN(caller->mm->pgd[vicpgn]);
+      vicfpn = GETVAL(vicpte, PAGING_PTE_FPN_MASK, 0);
+      // vicfpn = PAGING_FPN(caller->mm->pgd[vicpgn]); --> wrong bulit macro
 
       /* Do swap frame from MEMRAM to MEMSWP and vice versa*/
       /* Copy victim frame to swap */
@@ -268,18 +255,12 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
 
       // Update its online status of the target page
       pte_set_fpn(&caller->mm->pgd[pgn], vicfpn);
-      
-      // enlist_framephy_node(&caller->active_mswp->free_fp_list, tgtfpn);
-      // delist_framephy_node(&caller->active_mswp->used_fp_list, tgtfpn);
-
-      delist_framephy_node(&caller->active_mswp->free_fp_list, swpfpn);
-      // enlist_framephy_node(&caller->active_mswp->used_fp_list, swpfpn);
 
       enlist_pgn_node(&caller->mm->fifo_pgn, pgn);
     }
   }
   
-  // *fpn = PAGING_FPN(pte);
+  // *fpn = PAGING_FPN(pte); // Wrong built macro
   *fpn = GETVAL(pte, PAGING_PTE_FPN_MASK, 0);
 
   return 0;
@@ -435,12 +416,15 @@ int free_pcb_memph(struct pcb_t *caller)
 
     if (!PAGING_PAGE_PRESENT(pte))
     {
-      fpn = PAGING_FPN(pte);
+      // fpn = PAGING_FPN(pte);
       fpn = GETVAL(pte, PAGING_PTE_FPN_MASK, 0);
 
       MEMPHY_put_freefp(caller->mram, fpn);
-    } else {
-      fpn = PAGING_SWP(pte);
+    } else 
+    {
+      // fpn = PAGING_SWP(pte);
+      fpn = GETVAL(pte, PAGING_PTE_SWPOFF_MASK, PAGING_SWPFPN_OFFSET);
+
       MEMPHY_put_freefp(caller->active_mswp, fpn);    
     }
   }
@@ -482,10 +466,9 @@ int validate_overlap_vm_area(struct pcb_t *caller, int vmaid, int vmastart, int 
 
   /* TODO validate the planned memory area is not overlapped */
 
-  // Check if the new memory range overlaps with any existing vm_area_struct
+  // Check if the new memory range overlaps with the current vm_area_struct
   while (vma)
   {
-    // Check if the new memory range overlaps with the current vm_area_struct
     // if (OVERLAP(vma->vm_start, vmastart, vmaend, vma->vm_end) == 0)
     //   return -1;
     vma = vma->vm_next;
@@ -526,7 +509,6 @@ int inc_vma_limit(struct pcb_t *caller, int vmaid, int inc_sz)
     return -1; /* Map the memory to MEMRAM */
 
   return 0;
-
 }
 
 /*find_victim_page - find victim page
@@ -539,8 +521,6 @@ int find_victim_page(struct mm_struct *mm, int *retpgn)
   struct pgn_t *pg = mm->fifo_pgn;
 
   /* TODO: Implement the theorical mechanism to find the victim page */
-
-  // pthread_mutex_init(&mm->mtx, NULL); pthread_mutex_lock(&mm->mtx);
   
   if (!pg) return -1;
   
@@ -555,11 +535,9 @@ int find_victim_page(struct mm_struct *mm, int *retpgn)
   *retpgn = pg->pgn;
   if (prev_pg)
     prev_pg->pg_next = NULL;
-  else mm->fifo_pgn = NULL; // fifo_pgn has only 1 node
+  else mm->fifo_pgn = NULL; // fifo_pgn list has only 1 node
 
   free(pg);
-
-  // pthread_mutex_unlock(&mm->mtx); pthread_mutex_destroy(&mm->mtx); 
 
   return 0;
 }
@@ -572,8 +550,9 @@ int find_victim_page(struct mm_struct *mm, int *retpgn)
  */
 int get_free_vmrg_area(struct pcb_t *caller, int vmaid, int size, struct vm_rg_struct *newrg)
 {
-  struct vm_area_struct *cur_vma = get_vma_by_num(caller->mm, vmaid);
+  // pthread_mutex_lock(&caller->mm->mtx);
 
+  struct vm_area_struct *cur_vma = get_vma_by_num(caller->mm, vmaid);
   struct vm_rg_struct *rgit = cur_vma->vm_freerg_list;
 
   if (rgit == NULL)
@@ -623,10 +602,12 @@ int get_free_vmrg_area(struct pcb_t *caller, int vmaid, int size, struct vm_rg_s
     }
   }
 
- if(newrg->rg_start == -1) // new region not found
-   return -1;
+  if(newrg->rg_start == -1) // new region not found
+    return -1;
 
- return 0;
+  // pthread_mutex_unlock(&caller->mm->mtx);
+
+  return 0;
 }
 
 
