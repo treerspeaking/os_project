@@ -163,9 +163,6 @@ int __free(struct pcb_t *caller, int vmaid, int rgid)
   rgnode->rg_end = caller->mm->symrgtbl[rgid].rg_end;
   rgnode->rg_next = NULL;
 
-  // struct vm_area_struct *cur_vma = get_vma_by_num(caller->mm, 0);
-  // cur_vma->vm_end = cur_vma->vm_end - PAGING_PAGE_ALIGNSZ(caller->mm->symrgtbl[rgid].rg_end - caller->mm->symrgtbl[rgid].rg_start);
-
   /*enlist the obsoleted memory region */
   enlist_vm_freerg_list(caller->mm, rgnode);
 
@@ -225,9 +222,6 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
 
       pte_set_fpn(&caller->mm->pgd[pgn], tgtfpn);
 
-      // enlist_framephy_node(&caller->active_mswp->free_fp_list, tgtfpn);
-      // delist_framephy_node(&caller->active_mswp->used_fp_list, swpfpn);
-
       enlist_framephy_node(&caller->mram->used_fp_list, swpfpn);
 
     } else
@@ -247,7 +241,7 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
       
       vicpte = caller->mm->pgd[vicpgn];  // victim pte from victim page number
       vicfpn = GETVAL(vicpte, PAGING_PTE_FPN_MASK, 0);
-      // vicfpn = PAGING_FPN(caller->mm->pgd[vicpgn]);
+      // vicfpn = PAGING_FPN(caller->mm->pgd[vicpgn]); --> wrong bulit macro
 
       /* Do swap frame from MEMRAM to MEMSWP and vice versa*/
       /* Copy victim frame to swap */
@@ -261,12 +255,6 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
 
       // Update its online status of the target page
       pte_set_fpn(&caller->mm->pgd[pgn], vicfpn);
-      
-      // enlist_framephy_node(&caller->active_mswp->free_fp_list, tgtfpn);
-      // delist_framephy_node(&caller->active_mswp->used_fp_list, tgtfpn);
-
-      // delist_framephy_node(&caller->active_mswp->free_fp_list, swpfpn);
-      // enlist_framephy_node(&caller->active_mswp->used_fp_list, swpfpn);
 
       enlist_pgn_node(&caller->mm->fifo_pgn, pgn);
     }
@@ -428,11 +416,12 @@ int free_pcb_memph(struct pcb_t *caller)
 
     if (!PAGING_PAGE_PRESENT(pte))
     {
-      fpn = PAGING_FPN(pte);
+      // fpn = PAGING_FPN(pte);
       fpn = GETVAL(pte, PAGING_PTE_FPN_MASK, 0);
 
       MEMPHY_put_freefp(caller->mram, fpn);
-    } else {
+    } else 
+    {
       // fpn = PAGING_SWP(pte);
       fpn = GETVAL(pte, PAGING_PTE_SWPOFF_MASK, PAGING_SWPFPN_OFFSET);
 

@@ -19,8 +19,8 @@ static int timer_stop = 0;
 
 
 static void * timer_routine(void * args) {
-	printf("\n------------------------------------------------------------\n");
-    printf("Time slot %3lu\n", current_time());
+	// printf("\n------------------------------------------------------------\n");
+    printf("\nTime slot %3lu ----------------------------------------------\n", current_time());
 	while (!timer_stop) {
 		int fsh = 0;
 		int event = 0;
@@ -44,8 +44,9 @@ static void * timer_routine(void * args) {
 
 		/* Increase the time slot */
 		_time++;
-		printf("\n------------------------------------------------------------\n");
-		printf("Time slot %3lu\n", current_time());
+
+		// printf("\n------------------------------------------------------------\n");
+		printf("\nTime slot %3lu ----------------------------------------------\n", current_time());
 		
 		/* Let devices continue their job */
 		for (temp = dev_list; temp != NULL; temp = temp->next) {

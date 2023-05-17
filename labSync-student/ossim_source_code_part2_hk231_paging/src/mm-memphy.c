@@ -167,9 +167,8 @@ int MEMPHY_dump(struct memphy_struct * mp)
    *     for tracing the memory content
    */
 
-   // From CHAT-GPT with love ---------------------------------------------------------------------
    int count = -1;
-
+   
    printf("------------------------ RAM_STATUS ------------------------\n");
 
    for (int i = 0; i < mp->maxsz; i++)
@@ -189,8 +188,7 @@ int MEMPHY_dump(struct memphy_struct * mp)
    }
    if (count == -1) printf("Nothing in RAM!");
 
-   printf("\n---\n");
-   // ----------------------------------------------------------------------------
+   printf("\n------------------------------------------------------------\n");
 
    return 0;
 }
